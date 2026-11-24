@@ -1,9 +1,5 @@
 <x-layouts.dashboard :page-title="'Company settings'" :admin-mode="false" :tenant="$tenant" :user="$user">
-    <div class="mb-6">
-        <p class="text-sm font-medium text-blue-700">Tenant configuration</p>
-        <h1 class="mt-1 text-2xl font-semibold text-slate-900">Company settings</h1>
-    </div>
-
+    
     @if (session('status'))
         <div role="status" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div>
     @endif

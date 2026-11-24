@@ -1,14 +1,4 @@
-<x-layouts.dashboard :page-title="'Dashboard'" :admin-mode="false" :tenant="$tenant" :user="$user">
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-            <p class="text-sm font-medium text-blue-700">Company workspace</p>
-            <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Welcome, {{ $user->name }}</h1>
-            <p class="mt-1 text-sm text-slate-500">Your tenant workspace is connected and ready for setup.</p>
-        </div>
-        <span class="inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium capitalize text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>{{ $tenant->status }} subscription
-        </span>
-    </div>
+<x-layouts.dashboard :page-title="'Dashboard'" :admin-mode="false" :tenant="$tenant" :user="$user">    
 
     <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Workspace summary">
         <article class="rounded-lg border border-slate-200 bg-white p-4">

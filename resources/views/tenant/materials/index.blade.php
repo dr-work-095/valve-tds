@@ -1,6 +1,5 @@
 <x-layouts.dashboard :page-title="'Materials'" :admin-mode="false" :tenant="$tenant" :user="$user">
-    <div class="mb-6 flex items-end justify-between gap-3">
-        <div><p class="text-sm font-medium text-blue-700">Catalog</p><h1 class="mt-1 text-2xl font-semibold text-slate-900">Materials</h1></div>
+    <div class="mb-6 flex items-end justify-between gap-3">        
         <a href="{{ route('tenant.materials.create') }}" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Add material</a>
     </div>
     @if (session('status')) <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div> @endif
