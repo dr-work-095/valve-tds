@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use App\Support\TenantPlanLimits;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -56,6 +57,7 @@ class TenantProvisioningTest extends TestCase
         try {
             $this->assertSame(30, DB::connection('tenant')->table('materials')->count());
             $this->assertSame(1, DB::connection('tenant')->table('company_settings')->count());
+            $this->assertTrue(Schema::connection('tenant')->hasTable('valve_models'));
         } finally {
             tenancy()->end();
         }

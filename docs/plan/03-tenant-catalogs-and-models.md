@@ -88,3 +88,55 @@ valve-model master data, with private media and strict role/tenant isolation.
 - Materials catalog UI, validation, and server-side table endpoint.
 - Authenticated tenant media controller.
 - Valve model CRUD, private schematic upload, and plan-limit enforcement.
+
+## Implementation status
+
+The Phase 3 tenant catalog implementation is complete for the current MVP surface:
+
+- Tenant databases now include a `valve_models` table in addition to company
+  settings and materials.
+- Company settings update through a tenant-scoped page and support private logo
+  uploads, JSON default notes, and single-row `id=1` persistence.
+- Materials provide tenant-scoped create/edit flows, allowlisted DataTables
+  search/sort/filter inputs, and unique-in-tenant code validation.
+- Valve models provide tenant-scoped create/edit/list flows, datalist suggestions,
+  private schematic uploads, custom JSON attributes, and starter quota checks.
+- Sales users receive `403` from settings, materials, and valve-model
+  administration routes through `EnsureTenantAdmin`.
+- Media requests are restricted to `logos` and `schematics`, remain under the
+  initialized tenant UID directory, and return private/no-store responses.
+
+The focused Phase 3 suite passes in SQLite, including tenant-admin role checks,
+company settings persistence, material CRUD/uniqueness, starter model quotas,
+private schematic storage, traversal rejection, and cross-tenant media isolation.
+
+After deploying a new tenant migration, run it for existing tenants:
+
+```sh
+php artisan tenants:migrate --force --no-interaction
+```
+
+### QA checklist
+
+- Confirm Company Admin can update all company settings, upload a logo, replace
+  the logo, and verify repeated saves retain one settings row.
+- Confirm Sales users receive `403` from settings, materials, and valve-model
+  administration routes.
+- Verify material code uniqueness, category/status filtering, sorting, pagination,
+  and inactive material behavior.
+- Verify a Starter tenant cannot create or reactivate a sixth active valve model;
+  confirm Growth and Pro remain unlimited for this quota.
+- Upload invalid logo/schematic file types and oversized files; confirm validation
+  fails without partial database or file writes.
+- Verify uploaded media loads through the authenticated media route and cannot be
+  accessed through another tenant UID or a traversal path.
+- Confirm custom model attributes are normalized and cannot be used to inject
+  arbitrary or nested server values.
+- Verify tenant databases remain isolated and the Super Admin central routes never
+  initialize tenant context.
+
+Run the focused coverage with:
+
+```sh
+php artisan test --compact tests/Feature/TenantCatalogTest.php tests/Feature/TenantMediaTest.php
+```

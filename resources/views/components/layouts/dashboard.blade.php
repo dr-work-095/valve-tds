@@ -43,6 +43,39 @@
                             <span class="nav-label">Tenants</span>
                         </a>
                     @else
+                        @if ($user->role === 'admin')
+                            <a href="{{ route('tenant.settings.edit') }}"
+                                @class(['nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition', 'bg-blue-50 font-semibold text-blue-700' => request()->routeIs('tenant.settings.*')])
+                                @if (request()->routeIs('tenant.settings.*')) aria-current="page" @endif>
+                                <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.42 1.42-.06-.06A1.7 1.7 0 0 0 16.4 18l-.09.05V22h-2v-4.95l-.09-.05a1.7 1.7 0 0 0-1.88.34l-.06.06-1.42-1.42.06-.06A1.7 1.7 0 0 0 11.26 15H7v-2h4.26a1.7 1.7 0 0 0 1.88-1.34l.06-.06-1.42-1.42-.06.06A1.7 1.7 0 0 0 10.6 12H7v-2h3.6a1.7 1.7 0 0 0 1.88-1.34l.06-.06-1.42-1.42.06-.06A1.7 1.7 0 0 0 12.6 6H16v2h-3.4a1.7 1.7 0 0 0-.34 1.88l.06.06 1.42 1.42.06-.06A1.7 1.7 0 0 0 14.4 12H19v2h-4.6a1.7 1.7 0 0 0-1.88 1.34l-.06.06 1.42 1.42.06-.06A1.7 1.7 0 0 0 15.6 18H19v-2h-3.4a1.7 1.7 0 0 0-.34-1.88l-.06-.06L13.78 12.64"/>
+                                </svg>
+                                <span class="nav-label">Company settings</span>
+                            </a>
+                            <a href="{{ route('tenant.materials.index') }}"
+                                @class(['nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition', 'bg-blue-50 font-semibold text-blue-700' => request()->routeIs('tenant.materials.*')])
+                                @if (request()->routeIs('tenant.materials.*')) aria-current="page" @endif>
+                                <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                    <path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="2"/><circle cx="16" cy="12" r="2"/>
+                                </svg>
+                                <span class="nav-label">Materials</span>
+                            </a>
+                            <a href="{{ route('tenant.valve-models.index') }}"
+                                @class(['nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition', 'bg-blue-50 font-semibold text-blue-700' => request()->routeIs('tenant.valve-models.*')])
+                                @if (request()->routeIs('tenant.valve-models.*')) aria-current="page" @endif>
+                                <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                                </svg>
+                                <span class="nav-label">Valve models</span>
+                            </a>
+                        @else
+                            <span class="nav-link flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400" aria-disabled="true" title="Company Admin access required">
+                                <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                                </svg>
+                                <span class="nav-label">Valve models</span>
+                            </span>
+                        @endif
                         <span class="nav-link flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400" aria-disabled="true" title="Available in the next setup phase">
                             <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                                 <path d="M4 8h16M4 16h16M7 5v6m10-6v6M7 13v6m10-6v6"/><circle cx="12" cy="12" r="2"/>
