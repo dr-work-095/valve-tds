@@ -126,6 +126,66 @@ class TenantCatalogTest extends TestCase
         tenancy()->end();
     }
 
+    public function test_valve_model_can_be_edited_when_name_and_category_are_unchanged(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Gate Valve',
+            'category' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->put(route('tenant.valve-models.update', $model), [
+            'name' => 'Gate Valve',
+            'category' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'face_to_face_standard' => 'ASME B16.10',
+            'end_connection_standard' => 'ASME B16.5',
+            'is_active' => 1,
+        ])->assertRedirect(route('tenant.valve-models.index'));
+
+        tenancy()->initialize($tenant);
+        $this->assertSame('ASME B16.10', $model->fresh()->face_to_face_standard);
+        $this->assertSame('ASME B16.5', $model->fresh()->end_connection_standard);
+        tenancy()->end();
+    }
+
+    public function test_valve_model_rejects_an_existing_name_in_the_same_category(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        ValveModel::create([
+            'name' => 'Existing Gate',
+            'category' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $model = ValveModel::create([
+            'name' => 'My Gate',
+            'category' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->put(route('tenant.valve-models.update', $model), [
+            'name' => 'Existing Gate',
+            'category' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => 1,
+        ])->assertSessionHasErrors('name');
+    }
+
     public function test_starter_tenant_cannot_create_a_sixth_active_valve_model(): void
     {
         [$tenant, $admin] = $this->createTenantUser('admin');

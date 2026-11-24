@@ -132,6 +132,8 @@ php artisan tenants:migrate --force --no-interaction
   accessed through another tenant UID or a traversal path.
 - Confirm custom model attributes are normalized and cannot be used to inject
   arbitrary or nested server values.
+- Edit a valve model without changing its name/category and confirm it saves.
+  Confirm renaming to another existing name in the same category is rejected.
 - Verify tenant databases remain isolated and the Super Admin central routes never
   initialize tenant context.
 

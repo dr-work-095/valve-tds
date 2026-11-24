@@ -15,7 +15,14 @@ class UpdateValveModelRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('tenant.valve_models', 'name')->where(fn ($query) => $query->where('category', $this->input('category')))->ignore($this->route('valve_model'))],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('tenant.valve_models', 'name')
+                    ->where(fn ($query) => $query->where('category', $this->input('category')))
+                    ->ignore($this->route('valveModel')),
+            ],
             'category' => ['required', 'string', 'max:100'],
             'design_standard' => ['required', 'string', 'max:255'],
             'testing_standard' => ['required', 'string', 'max:255'],
