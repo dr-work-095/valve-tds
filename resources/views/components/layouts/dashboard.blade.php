@@ -135,7 +135,7 @@
                 </div>
             </header>
 
-            <main class="mx-auto max-w-[1600px] bg-white p-4 sm:p-6 lg:p-8">
+            <main class="mx-auto bg-white p-4 sm:p-6 lg:p-8">
                 {{ $slot }}
                 <footer class="py-6 text-center text-xs text-slate-400">ValveTDS · Technical documentation made simple</footer>
             </main>
