@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+.sidebar {
+    transition: width 0.25s ease, transform 0.25s ease;
+}
+
+.sidebar.collapsed {
+    width: 5rem;
+}
+
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .brand-label,
+.sidebar.collapsed .collapse-label {
+    display: none;
+}
+
+.sidebar.collapsed .nav-link,
+.sidebar.collapsed .brand-row,
+.sidebar.collapsed .collapse-button {
+    justify-content: center;
+}
+
+.sidebar.collapsed .nav-link {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+@media (max-width: 767px) {
+    .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 40;
+        width: 16rem;
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 0 10px 40px rgb(15 23 42 / 12%);
+    }
+
+    .sidebar.collapsed {
+        width: 16rem;
+    }
+
+    .sidebar.collapsed .nav-label,
+    .sidebar.collapsed .brand-label,
+    .sidebar.collapsed .collapse-label {
+        display: inline;
+    }
+
+    .sidebar.collapsed .nav-link {
+        justify-content: flex-start;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .sidebar.collapsed .brand-row,
+    .sidebar.collapsed .collapse-button {
+        justify-content: flex-start;
+    }
+}

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ValveTDS — New Datasheet Configuration</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css" />
+  <style>
+    :root { color-scheme: light; }
+    html, body { background:#fff; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .sidebar { transition: width .25s ease, transform .25s ease; }
+    .sidebar.collapsed { width:5rem; }
+    .sidebar.collapsed .nav-label, .sidebar.collapsed .brand-label, .sidebar.collapsed .collapse-label { display:none; }
+    .sidebar.collapsed .nav-link { justify-content:center; }
+    .sidebar.collapsed .brand-row { justify-content:center; }
+    .sidebar.collapsed .collapse-button { justify-content:center; }
+    .sidebar.collapsed .nav-link { padding-left:.75rem; padding-right:.75rem; }
+    .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_length { display:none; }
+    table.dataTable { border-collapse:separate !important; border-spacing:0 !important; width:100% !important; }
+    table.dataTable thead th { border-bottom:1px solid #e2e8f0 !important; padding:11px 12px !important; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#64748b; font-weight:600; }
+    table.dataTable tbody td { border-bottom:1px solid #f1f5f9 !important; padding:10px 12px !important; vertical-align:middle; }
+    table.dataTable.no-footer { border-bottom:1px solid #e2e8f0 !important; }
+    table.dataTable tbody tr:hover { background:#f8fafc !important; }
+    #datasheetTable_wrapper .dt-layout-row:last-child { padding:12px 16px; margin:0; border-top:1px solid #f1f5f9; }
+    #datasheetTable_wrapper .dt-info { padding:0; color:#64748b; font-size:12px; }
+    #datasheetTable_wrapper .dt-paging { display:flex; align-items:center; gap:4px; }
+    #datasheetTable_wrapper .dt-paging-button { min-width:32px; padding:6px 9px !important; border:1px solid transparent !important; border-radius:6px !important; background:#fff !important; color:#475569 !important; font-size:12px !important; }
+    #datasheetTable_wrapper .dt-paging-button:hover:not(.disabled):not(.current) { border-color:#e2e8f0 !important; background:#f8fafc !important; color:#0f172a !important; }
+    #datasheetTable_wrapper .dt-paging-button.current { border-color:#2563eb !important; background:#2563eb !important; color:#fff !important; }
+    #datasheetTable_wrapper .dt-paging-button.disabled { color:#cbd5e1 !important; }
+    .toast { transform:translateY(12px); opacity:0; transition:all .25s ease; }
+    .toast.show { transform:translateY(0); opacity:1; }
+    @media (max-width:767px) {
+      .sidebar { position:fixed; inset:0 auto 0 0; z-index:40; width:16rem; transform:translateX(-100%); box-shadow:none; }
+      .sidebar.mobile-open { transform:translateX(0); box-shadow:0 10px 40px rgba(15,23,42,.12); }
+      .sidebar.collapsed { width:16rem; }
+      .sidebar.collapsed .nav-label, .sidebar.collapsed .brand-label, .sidebar.collapsed .collapse-label { display:inline; }
+      .sidebar.collapsed .nav-link { justify-content:flex-start; padding-left:1rem; padding-right:1rem; }
+      .sidebar.collapsed .brand-row { justify-content:flex-start; }
+      .sidebar.collapsed .collapse-button { justify-content:flex-start; }
+    }
+  </style>
+</head>
+<body class="bg-white text-slate-900 min-h-screen">
+  <div class="flex min-h-screen bg-white">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar w-64 shrink-0 border-r border-slate-200 bg-white flex flex-col">
+      <div class="h-16 px-5 flex items-center border-b border-slate-200 brand-row gap-3">
+        <div class="h-9 w-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="8" cy7 r="2" fill="white"/><circle cx="15" cy12 r="2" fill="white"/><circle cx="10" cy17 r="2" fill="white"/></svg>
+        </div>
+        <span class="brand-label text-lg font-bold tracking-tight">ValveTDS</span>
+      </div>
+      <div class="px-3 pt-5 pb-2">
+        <p class="nav-label px-3 text-[10px] uppercase tracking-[.14em] font-semibold text-slate-400 mb-2">Workspace</p>
+        <nav class="space-y-1">
+          <a href="#" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition" title="Dashboard">
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="nav-label">Dashboard</span>
+          </a>
+          <a href="#" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition" title="Valve Models">
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h16M4 16h16M7 5v6m10-6v6M7 13v6m10-6v6"/><circle cx="12" cy="12" r="2"/></svg><span class="nav-label">Valve Models</span>
+          </a>
+          <a href="#" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition" title="Materials">
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></svg><span class="nav-label">Materials</span>
+          </a>
+          <a href="#" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold bg-blue-50 text-blue-700" title="Datasheets" aria-current="page">
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span class="nav-label">Datasheets</span>
+          </a>
+          <a href="#" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition" title="Settings">
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1 1.9-2 2-1.9-1.1-.1-.1a7.8 7.8 0 0 1-1.6.7l-.2.1-.5 2.2h-2.8l-.5-2.2-.2-.1a7.8 7.8 0 0 1-1.6-.7l-.1.1-1.9 1.1-2-2 1.1-1.9.1-.1a7.8 7.8 0 0 1-.7-1.6l-.1-.2-2.2-.5v-2.8l2.2-.5.1-.2a7.8 7.8 0 0 1 .7-1.6l-.1-.1-1.1-1.9 2-2 1.9 1.1.1.1a7.8 7.8 0 0 1 1.6-.7l.2-.1.5-2.2h2.8l.5 2.2.2.1a7.8 7.8 0 0 1 1.6.7l.1-.1 1.9-1.1 2 2-1.1 1.9-.1.1a7.8 7.8 0 0 1 .7 1.6l.1.2 2.2.5v2.8l-2.2.5-.1.2a7.8 7.8 0 0 1-.7 1.6Z"/></svg><span class="nav-label">Settings</span>
+          </a>
+        </nav>
+      </div>
+      <div class="mt-auto p-3 border-t border-slate-200">
+        <button id="collapseBtn" class="collapse-button w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition" type="button">
+          <svg id="collapseIcon" class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 18-6-6 6-6"/><path d="M9 12h11"/></svg>
+          <span class="collapse-label">Collapse</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main column -->
+    <div class="min-w-0 flex-1 bg-white">
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
+        <div class="flex items-center min-w-0 gap-3">
+          <button id="mobileMenuBtn" class="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50" aria-label="Open navigation">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="text-sm text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis">
+            <span>Datasheets</span><span class="mx-2 text-slate-300">/</span><span class="text-slate-900 font-medium">New Configuration</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 sm:gap-4">
+          <div class="relative hidden sm:block">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+            <input id="globalSearch" type="search" placeholder="Search templates, tags..." class="w-56 lg:w-64 h-9 pl-9 pr-3 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-blue-100 focus:border-blue-600" />
+          </div>
+          <button class="flex items-center justify-center w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-semibold text-xs ring-1 ring-blue-200" aria-label="User profile">DR</button>
+        </div>
+      </header>
+
+      <main class="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto bg-white">      
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
+          <!-- Configuration Wizard -->
+          <section class="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm">
+            <div class="flex items-start justify-between gap-3 mb-5">
+              <div>
+                <h2 class="text-base font-semibold text-slate-900">Valve Configuration Wizard</h2>
+                <p class="text-sm text-slate-500 mt-1">General information and technical requirements</p>
+              </div>
+              <span class="inline-flex items-center rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-500">Step 1 of 3</span>
+            </div>
+            <form id="configForm" class="space-y-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="clientName" class="block text-sm font-medium text-slate-700 mb-1.5">Client Name</label>
+                  <input id="clientName" name="clientName" type="text" placeholder="Enter client name" class="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-blue-100 focus:border-blue-600" />
+                </div>
+                <div>
+                  <label for="projectRef" class="block text-sm font-medium text-slate-700 mb-1.5">Project / PO Ref</label>
+                  <input id="projectRef" name="projectRef" type="text" placeholder="e.g. PO-24018" class="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-blue-100 focus:border-blue-600" />
+                </div>
+              </div>
+              <div>
+                <label for="valveModel" class="block text-sm font-medium text-slate-700 mb-1.5">Valve Model</label>
+                <input id="valveModel" name="valveModel" type="text" autocomplete="off" placeholder="Search valve models..." class="w-full h-10 px-3 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" />
+              </div>
+              <div>
+                <label for="bodyMaterial" class="block text-sm font-medium text-slate-700 mb-1.5">Body Material</label>
+                <input id="bodyMaterial" name="bodyMaterial" type="text" autocomplete="off" placeholder="Search ASTM material grade..." class="w-full h-10 px-3 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" />
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-sm font-medium text-slate-700">Testing Requirements — API 598</label>
+                  <span class="text-xs text-slate-500">Select applicable tests</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <label class="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer"><input type="checkbox" name="tests" value="Hydrostatic Shell" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />Hydrostatic Shell</label>
+                  <label class="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer"><input type="checkbox" name="tests" value="Seat Leakage" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />Seat Leakage</label>
+                  <label class="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer"><input type="checkbox" name="tests" value="Pneumatic Air Seat" class="rounded border-slate-300 text-blue-600 focus:ring-blue-600" />Pneumatic Air Seat</label>
+                  <label class="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer"><input type="checkbox" name="tests" value="Radiography (RT)" class="rounded border border-slate-300 text-blue-600 focus:ring-blue-600" />Radiography (RT)</label>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">ASME Pressure Class</label>
+                <div class="flex flex-wrap gap-2">
+                  <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="pressureClass" value="150" checked /><span class="inline-flex px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-200">Class 150</span></label>
+                  <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="pressureClass" value="300" /><span class="inline-flex px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-200">Class 300</span></label>
+                  <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="pressureClass" value="600" /><span class="inline-flex px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-200">Class 600</span></label>
+                  <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="pressureClass" value="900" /><span class="inline-flex px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-700 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700">Class 900</span></label>
+                </div>
+              </div>
+            </form>
+          </section>
+
+          <!-- BOM -->
+          <section class="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm min-w-0">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-5">
+              <div>
+                <h2 class="text-base font-semibold text-slate-900">Materials &amp; Bill of Materials</h2>
+                <p class="text-sm text-slate-500 mt-1">Standard material grades and client overrides</p>
+              </div>
+              <button id="addPartBtn" type="button" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-3 focus:ring-blue-200 whitespace-nowrap">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add Part +
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table id="bomTable" class="display w-full text-sm">
+                <thead><tr><th>Call</th><th>Component Name</th><th>Standard Grade</th><th>Client Override</th></tr></thead>
+                <tbody>
+                  <tr data-part="Body"><td class="call-number font-medium text-slate-500">1</td><td><input class="part-name w-32 max-w-full bg-white text-sm text-slate-800 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value="Body" /></td><td class="standard-grade text-sm text-slate-600">ASTM A216 WCB</td><td><input type="text" autocomplete="off" class="material-select override-grade w-40 max-w-full h-9 px-2 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" placeholder="Search grade..." /></td></tr>
+                  <tr data-part="Bonnet"><td class="call-number font-medium text-slate-500">2</td><td><input class="part-name w-32 max-w-full bg-white text-sm text-slate-800 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value="Bonnet" /></td><td class="standard-grade text-sm text-slate-600">ASTM A216 WCB</td><td><input type="text" autocomplete="off" class="material-select override-grade w-40 max-w-full h-9 px-2 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" placeholder="Search grade..." /></td></tr>
+                  <tr data-part="Wedge / Disc"><td class="call-number font-medium text-slate-500">3</td><td><input class="part-name w-32 max-w-full bg-white text-sm text-slate-800 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value="Wedge / Disc" /></td><td class="standard-grade text-sm text-slate-600">ASTM A216 WCB</td><td><input type="text" autocomplete="off" class="material-select override-grade w-40 max-w-full h-9 px-2 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" placeholder="Search grade..." /></td></tr>
+                  <tr data-part="Stem"><td class="call-number font-medium text-slate-500">4</td><td><input class="part-name w-32 max-w-full bg-white text-sm text-slate-800 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value="Stem" /></td><td class="standard-grade text-sm text-slate-600">ASTM A182 F6a</td><td><input type="text" autocomplete="off" class="material-select override-grade w-40 max-w-full h-9 px-2 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" placeholder="Search grade..." /></td></tr>
+                  <tr data-part="Seat Ring"><td class="call-number font-medium text-slate-500">5</td><td><input class="part-name w-32 max-w-full bg-white text-sm text-slate-800 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value="Seat Ring" /></td><td class="standard-grade text-sm text-slate-600">ASTM A182 F316</td><td><input type="text" autocomplete="off" class="material-select override-grade w-40 max-w-full h-9 px-2 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" placeholder="Search grade..." /></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="mt-3 flex items-center gap-2 text-xs text-slate-500"><svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M12 11v5"/></svg>Overrides are optional and apply to this datasheet only.</div>
+          </section>
+        </div>
+
+        <!-- Action bar -->
+        <section class="mt-5 bg-white border border-slate-200 rounded-xl px-4 sm:px-6 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <p class="text-sm text-slate-500 flex items-center gap-2"><svg class="w-4 h-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 8v4l2.5 1.5"/><circle cx="12" cy="12" r="9"/></svg>Snapshot will be locked as Rev 0 upon PDF generation.</p>
+          <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
+            <button id="resetBtn" type="button" class="inline-flex justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-3 focus:ring-slate-100">Reset Form</button>
+            <button id="generateBtn" type="button" class="inline-flex justify-center items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-3 focus:ring-blue-200">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h8l4 4v14H5V3z"/><path d="M8 3v6h8V3M8 17h8"/></svg>Generate Datasheet (PDF)
+            </button>
+          </div>
+        </section>
+
+        <!-- UI component reference -->
+        <section class="mt-5 bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-sm">
+          <div class="mb-6">
+            <h2 class="text-base font-semibold text-slate-900">UI Components</h2>
+            <p class="text-sm text-slate-500 mt-1">Button, text, and status styles for reuse throughout the application</p>
+          </div>
+
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Buttons</h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" class="inline-flex items-center rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-3 focus:ring-blue-200">Primary</button>
+                <button type="button" class="inline-flex items-center rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-3 focus:ring-emerald-200">Success</button>
+                <button type="button" class="inline-flex items-center rounded-lg bg-amber-500 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-600 focus:outline-none focus:ring-3 focus:ring-amber-200">Warning</button>
+                <button type="button" class="inline-flex items-center rounded-lg bg-red-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-3 focus:ring-red-200">Danger</button>
+                <button type="button" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-3 focus:ring-slate-200">Secondary</button>
+                <button type="button" disabled class="inline-flex cursor-not-allowed items-center rounded-lg bg-slate-200 px-3.5 py-2 text-sm font-medium text-slate-500">Disabled</button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Text colors</h3>
+              <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <p class="text-sm font-medium text-slate-700">Default <span class="block text-xs font-normal text-slate-500">text-slate-700</span></p>
+                <p class="text-sm font-medium text-blue-700">Info <span class="block text-xs font-normal text-blue-600">text-blue-700</span></p>
+                <p class="text-sm font-medium text-emerald-700">Success <span class="block text-xs font-normal text-emerald-600">text-emerald-700</span></p>
+                <p class="text-sm font-medium text-amber-700">Warning <span class="block text-xs font-normal text-amber-600">text-amber-700</span></p>
+                <p class="text-sm font-medium text-red-700">Error <span class="block text-xs font-normal text-red-600">text-red-700</span></p>
+                <p class="text-sm font-medium text-violet-700">Accent <span class="block text-xs font-normal text-violet-600">text-violet-700</span></p>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Badges &amp; tags</h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">Draft</span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-200"><span class="h-1.5 w-1.5 rounded-full bg-blue-600"></span>In Progress</span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200"><span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>Approved</span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Needs Review</span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-200"><span class="h-1.5 w-1.5 rounded-full bg-red-600"></span>Rejected</span>
+                <span class="inline-flex items-center rounded-md bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-200">API 598</span>
+                <span class="inline-flex items-center rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">ASME Class 150</span>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Form controls</h3>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label for="sampleTextInput" class="mb-1.5 block text-sm font-medium text-slate-700">Text input</label>
+                  <input id="sampleTextInput" type="text" placeholder="Enter a project name" class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-100" />
+                  <p class="mt-1.5 text-xs text-slate-500">A short description can go here.</p>
+                </div>
+                <div>
+                  <label for="sampleSelect" class="mb-1.5 block text-sm font-medium text-slate-700">Select menu</label>
+                  <select id="sampleSelect" class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-100">
+                    <option>Select a pressure class</option>
+                    <option>Class 150</option>
+                    <option>Class 300</option>
+                    <option>Class 600</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="sampleInvalidInput" class="mb-1.5 block text-sm font-medium text-slate-700">Input with error</label>
+                  <input id="sampleInvalidInput" type="text" value="Not a valid reference" aria-invalid="true" aria-describedby="sampleInputError" class="h-10 w-full rounded-lg border border-red-500 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-3 focus:ring-red-100" />
+                  <p id="sampleInputError" class="mt-1.5 text-xs text-red-600">Enter a valid project reference.</p>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3">
+                  <label for="sampleTextarea" class="mb-1.5 block text-sm font-medium text-slate-700">Textarea</label>
+                  <textarea id="sampleTextarea" rows="3" placeholder="Add notes or special requirements..." class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-100"></textarea>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-3 sm:col-span-2 lg:col-span-3">
+                  <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-200" />
+                    Checkbox option
+                  </label>
+                  <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <input type="radio" name="sampleRadio" checked class="h-4 w-4 border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-200" />
+                    Radio option
+                  </label>
+                  <label class="inline-flex cursor-pointer items-center gap-2.5 text-sm text-slate-700">
+                    <input type="checkbox" class="peer sr-only" />
+                    <span aria-hidden="true" class="relative h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-blue-600 peer-focus-visible:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-blue-100 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition peer-checked:after:translate-x-5"></span>
+                    Toggle switch
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Alerts</h3>
+              <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div class="flex gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3.5 text-blue-800" role="status">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8v.01"/></svg>
+                  <div><p class="text-sm font-semibold">Information</p><p class="mt-0.5 text-sm text-blue-700">A new datasheet template is available.</p></div>
+                </div>
+                <div class="flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3.5 text-emerald-800" role="status">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 4 4L19 6"/></svg>
+                  <div><p class="text-sm font-semibold">Saved successfully</p><p class="mt-0.5 text-sm text-emerald-700">Your changes have been saved.</p></div>
+                </div>
+                <div class="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-amber-800" role="status">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4m0 3v.01"/></svg>
+                  <div><p class="text-sm font-semibold">Review required</p><p class="mt-0.5 text-sm text-amber-700">Check the material override before continuing.</p></div>
+                </div>
+                <div class="flex gap-3 rounded-lg border border-red-200 bg-red-50 p-3.5 text-red-800" role="alert">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg>
+                  <div><p class="text-sm font-semibold">Unable to generate</p><p class="mt-0.5 text-sm text-red-700">Complete the required fields and try again.</p></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Summary cards</h3>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <article class="rounded-lg border border-slate-200 bg-white p-4">
+                  <p class="text-sm font-medium text-slate-500">Total datasheets</p>
+                  <p class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">128</p>
+                  <p class="mt-1 text-xs text-emerald-700">12 added this month</p>
+                </article>
+                <article class="rounded-lg border border-slate-200 bg-white p-4">
+                  <p class="text-sm font-medium text-slate-500">In review</p>
+                  <p class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">08</p>
+                  <p class="mt-1 text-xs text-amber-700">Requires attention</p>
+                </article>
+                <article class="rounded-lg border border-slate-200 bg-white p-4">
+                  <p class="text-sm font-medium text-slate-500">Approved</p>
+                  <p class="mt-2 text-2xl font-semibold tracking-tight text-slate-900">96</p>
+                  <p class="mt-1 text-xs text-slate-500">Across all projects</p>
+                </article>
+                <article class="rounded-lg border border-slate-200 bg-white p-4">
+                  <p class="text-sm font-medium text-slate-500">Completion</p>
+                  <div class="mt-3 flex items-center justify-between text-sm"><span class="font-semibold text-slate-900">76%</span><span class="text-slate-500">Target 100%</span></div>
+                  <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full w-3/4 rounded-full bg-blue-600"></div></div>
+                </article>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Progress &amp; steps</h3>
+              <div class="rounded-lg border border-slate-200 p-4 sm:p-5">
+                <ol class="grid grid-cols-3 gap-2" aria-label="Configuration steps">
+                  <li class="flex items-center gap-2 text-sm font-medium text-blue-700"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs text-white">1</span><span>Details</span></li>
+                  <li class="flex items-center gap-2 text-sm font-medium text-blue-700"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs text-white">2</span><span>Materials</span></li>
+                  <li class="flex items-center gap-2 text-sm font-medium text-slate-500"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-xs">3</span><span>Review</span></li>
+                </ol>
+                <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-label="Configuration completion" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100">
+                  <div class="h-full w-2/3 rounded-full bg-blue-600"></div>
+                </div>
+                <p class="mt-2 text-xs text-slate-500">Step 2 of 3 — Materials</p>
+              </div>
+            </div>
+
+            <div>
+              <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Minimal data table</h3>
+                  <p class="mt-1 text-sm text-slate-500">Sortable, searchable, and paginated with DataTables</p>
+                </div>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                  <label class="sr-only" for="datasheetTableSearch">Search datasheets</label>
+                  <input id="datasheetTableSearch" type="search" placeholder="Search datasheets..." class="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-100 sm:w-52" />
+                  <label class="sr-only" for="datasheetStatusFilter">Filter by status</label>
+                  <select id="datasheetStatusFilter" class="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-600 focus:border-blue-600 focus:outline-none focus:ring-3 focus:ring-blue-100">
+                    <option value="">All statuses</option>
+                    <option value="Approved">Approved</option>
+                    <option value="In Review">In Review</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+              </div>
+              <div class="overflow-hidden rounded-lg border border-slate-200">
+                <div class="overflow-x-auto">
+                  <table id="datasheetTable" class="display w-full text-sm">
+                    <thead>
+                      <tr><th>Datasheet</th><th>Project</th><th>Valve Model</th><th>Status</th><th>Updated</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="font-medium text-slate-900">DS-24018</span></td><td>North Plant Upgrade</td><td>Gate Valve, API 600</td>
+                        <td><span class="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Approved</span></td><td>Nov 18, 2026</td>
+                        <td><button type="button" class="font-medium text-blue-700 hover:text-blue-800">View</button></td>
+                      </tr>
+                      <tr>
+                        <td><span class="font-medium text-slate-900">DS-24017</span></td><td>Water Treatment Line</td><td>Ball Valve, API 6D</td>
+                        <td><span class="inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">In Review</span></td><td>Nov 17, 2026</td>
+                        <td><button type="button" class="font-medium text-blue-700 hover:text-blue-800">View</button></td>
+                      </tr>
+                      <tr>
+                        <td><span class="font-medium text-slate-900">DS-24016</span></td><td>Compressor Station</td><td>Globe Valve, BS 1873</td>
+                        <td><span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">Draft</span></td><td>Nov 16, 2026</td>
+                        <td><button type="button" class="font-medium text-blue-700 hover:text-blue-800">View</button></td>
+                      </tr>
+                      <tr>
+                        <td><span class="font-medium text-slate-900">DS-24015</span></td><td>North Plant Upgrade</td><td>Swing Check Valve</td>
+                        <td><span class="inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Approved</span></td><td>Nov 14, 2026</td>
+                        <td><button type="button" class="font-medium text-blue-700 hover:text-blue-800">View</button></td>
+                      </tr>
+                      <tr>
+                        <td><span class="font-medium text-slate-900">DS-24014</span></td><td>Cooling Water Project</td><td>Trunnion Ball Valve</td>
+                        <td><span class="inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">In Review</span></td><td>Nov 12, 2026</td>
+                        <td><button type="button" class="font-medium text-blue-700 hover:text-blue-800">View</button></td>
+                      </tr>
+                      <tr>
+                        <td><span class="font-medium text-slate-900">DS-24013</span></td><td>Tank Farm Expansion</td><td>Gate Valve, API 600</td>
+                        <td><span class="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">Draft</span></td><td>Nov 10, 2026</td>
+                        <td><button type="button" class="font-medium text-blue-700 hover:text-blue-800">View</button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Pagination</h3>
+              <nav class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2.5" aria-label="Pagination">
+                <p class="text-sm text-slate-500">Showing <span class="font-medium text-slate-700">1–10</span> of <span class="font-medium text-slate-700">48</span></p>
+                <div class="flex items-center gap-1">
+                  <button type="button" aria-label="Previous page" class="rounded-md border border-slate-300 px-2.5 py-1.5 text-sm text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed" disabled>Previous</button>
+                  <button type="button" aria-current="page" class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white">1</button>
+                  <button type="button" class="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">2</button>
+                  <button type="button" class="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">3</button>
+                  <span class="px-1 text-sm text-slate-400">…</span>
+                  <button type="button" class="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100">5</button>
+                  <button type="button" class="rounded-md border border-slate-300 px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-50">Next</button>
+                </div>
+              </nav>
+            </div>
+          </div>
+        </section>
+
+        <footer class="py-6 text-center text-xs text-slate-400">ValveTDS · Technical documentation made simple</footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast fixed bottom-5 right-5 z-50 max-w-sm w-[calc(100%-2.5rem)] bg-white border border-slate-200 shadow-lg rounded-xl p-4" role="status" aria-live="polite">
+    <div class="flex gap-3 items-start">
+      <div class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 8v4l2.5 1.5"/><circle cx="12" cy="12" r="9"/></svg>
+      </div>
+      <div class="flex-1"><p class="font-semibold text-sm text-slate-900">Datasheet generation queued</p><p class="mt-1 text-sm text-slate-600">Your configuration is ready to be captured as Revision 0.</p></div>
+      <button id="toastClose" class="text-slate-400 hover:text-slate-700" aria-label="Close toast"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </div>
+  </div>
+  <div id="mobileBackdrop" class="fixed inset-0 z-30 bg-white/70 hidden md:hidden"></div>
+
+  <!-- Correct load order: jQuery -> jQuery UI Autocomplete -> DataTables -> custom init -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
+  <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+  <script>
+    $(function () {
+      const valveModels = [
+        'Bolted Bonnet Gate Valve (API 600)',
+        '2-Piece Floating Ball Valve (API 6D)',
+        'Trunnion Mounted Ball Valve (API 6D)',
+        'Bolted Bonnet Globe Valve (BS 1873)',
+        'Swing Check Valve (BS 1868)'
+      ];
+
+      const materials = [
+        'ASTM A216 WCB (Carbon Steel)',
+        'ASTM A351 CF8M (SS 316)',
+        'ASTM A351 CF8 (SS 304)',
+        'ASTM A352 LCB (Low Temp CS)',
+        'ASTM A217 WC6 (Alloy Steel)',
+        'ASTM A995 4A (Duplex SS)',
+        'ASTM A182 F6a (Alloy Stem)',
+        'ASTM A182 F316 (SS 316)'
+      ];
+
+      const gradeShort = {
+        'ASTM A216 WCB (Carbon Steel)': 'ASTM A216 WCB',
+        'ASTM A351 CF8M (SS 316)': 'ASTM A351 CF8M',
+        'ASTM A351 CF8 (SS 304)': 'ASTM A351 CF8',
+        'ASTM A352 LCB (Low Temp CS)': 'ASTM A352 LCB',
+        'ASTM A217 WC6 (Alloy Steel)': 'ASTM A217 WC6',
+        'ASTM A995 4A (Duplex SS)': 'ASTM A995 4A',
+        'ASTM A182 F6a (Alloy Stem)': 'ASTM A182 F6a',
+        'ASTM A182 F316 (SS 316)': 'ASTM A182 F316'
+      };
+
+      const defaultBodyMaterial = 'ASTM A216 WCB (Carbon Steel)';
+      const defaultParts = [
+        { name: 'Body', grade: 'ASTM A216 WCB' },
+        { name: 'Bonnet', grade: 'ASTM A216 WCB' },
+        { name: 'Wedge / Disc', grade: 'ASTM A216 WCB' },
+        { name: 'Stem', grade: 'ASTM A182 F6a' },
+        { name: 'Seat Ring', grade: 'ASTM A182 F316' }
+      ];
+
+      function initAutocomplete($input, source, options) {
+        if ($input.data('ui-autocomplete')) {
+          $input.autocomplete('destroy');
+        }
+        $input.autocomplete({
+          source: source,
+          minLength: 0,
+          delay: 80,
+          appendTo: 'body',
+          position: { my: 'left top', at: 'left bottom', collision: 'flipfit' },
+          ...options
+        });
+        $input.on('focus.autocompleteOpen', function () {
+          $(this).autocomplete('search', $(this).val());
+        });
+      }
+
+      initAutocomplete($('#valveModel'), valveModels, {
+        select: function (event, ui) { $(this).val(ui.item.value); return false; }
+      });
+
+      initAutocomplete($('#bodyMaterial'), materials, {
+        select: function (event, ui) {
+          $(this).val(ui.item.value).trigger('change');
+          return false;
+        }
+      });
+
+      function initMaterialAutocomplete($input) {
+        initAutocomplete($input, materials, {
+          select: function (event, ui) {
+            $(this).val(ui.item.value);
+            return false;
+          }
+        });
+      }
+      $('.material-select').each(function () { initMaterialAutocomplete($(this)); });
+
+      const table = $('#bomTable').DataTable({
+        paging: false,
+        searching: false,
+        info: false,
+        ordering: false,
+        autoWidth: false,
+        language: { emptyTable: 'No components added yet' }
+      });
+
+      const datasheetTable = $('#datasheetTable').DataTable({
+        paging: true,
+        searching: true,
+        info: true,
+        lengthChange: false,
+        pageLength: 5,
+        autoWidth: false,
+        order: [[0, 'desc']],
+        language: {
+          emptyTable: 'No datasheets available',
+          zeroRecords: 'No matching datasheets found',
+          info: 'Showing _START_–_END_ of _TOTAL_ datasheets',
+          infoEmpty: 'No datasheets to show'
+        }
+      });
+      $('#datasheetTableSearch').on('input', function () {
+        datasheetTable.search(this.value).draw();
+      });
+      $('#datasheetStatusFilter').on('change', function () {
+        datasheetTable.column(3).search(this.value).draw();
+      });
+
+      function updateBodyGrade(value) {
+        $('#bomTable tbody tr[data-part="Body"] .standard-grade')
+          .text(gradeShort[value] || '—');
+      }
+      $('#bodyMaterial').on('change', function () {
+        updateBodyGrade($(this).val());
+      });
+
+      function renumberRows() {
+        $('#bomTable tbody tr').each(function (index) {
+          $(this).find('.call-number').text(index + 1);
+        });
+      }
+
+      $('#addPartBtn').on('click', function () {
+        const $row = $('<tr></tr>');
+        $row.append('<td class="call-number font-medium text-slate-500"></td>');
+        $row.append('<td><input class="part-name w-32 max-w-full bg-white text-sm text-slate-800 border border-slate-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value="New component" /></td>');
+        $row.append('<td class="standard-grade text-sm text-slate-600">—</td>');
+        $row.append('<td><input type="text" autocomplete="off" class="material-select override-grade w-40 max-w-full h-9 px-2 text-sm bg-white border border-slate-300 rounded-lg placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600" placeholder="Search grade..." /></td>');
+        table.row.add($row[0]).draw(false);
+        initMaterialAutocomplete($row.find('.material-select'));
+        renumberRows();
+      });
+
+      let collapsed = false;
+      function setCollapsed(state) {
+        collapsed = state;
+        $('#sidebar').toggleClass('collapsed', collapsed);
+        $('#collapseIcon').html(collapsed
+          ? '<path d="m9 18 6-6-6-6"/><path d="M15 12H3"/>'
+          : '<path d="m15 18-6-6 6-6"/><path d="M9 12h11"/>');
+      }
+      $('#collapseBtn').on('click', function () { setCollapsed(!collapsed); });
+      $('#mobileMenuBtn').on('click', function () {
+        $('#sidebar').addClass('mobile-open');
+        $('#mobileBackdrop').removeClass('hidden');
+      });
+      $('#mobileBackdrop').on('click', function () {
+        $('#sidebar').removeClass('mobile-open');
+        $(this).addClass('hidden');
+      });
+      $(window).on('resize', function () {
+        if (window.innerWidth >= 768) {
+          $('#sidebar').removeClass('mobile-open');
+          $('#mobileBackdrop').addClass('hidden');
+        }
+      });
+
+      $('#resetBtn').on('click', function () {
+        $('#configForm')[0].reset();
+        $('#valveModel, #bodyMaterial').val('');
+        $('#bomTable tbody tr').each(function (index) {
+          if (index >= defaultParts.length) {
+            table.row(this).remove();
+          } else {
+            $(this).find('.part-name').val(defaultParts[index].name);
+            $(this).find('.standard-grade').text(defaultParts[index].grade);
+            $(this).find('.material-select').val('');
+          }
+        });
+        table.draw(false);
+        updateBodyGrade(defaultBodyMaterial);
+        setCollapsed(false);
+      });
+
+      let toastTimer;
+      function showToast() {
+        $('#toast').addClass('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { $('#toast').removeClass('show'); }, 5000);
+      }
+      $('#generateBtn').on('click', showToast);
+      $('#toastClose').on('click', function () {
+        $('#toast').removeClass('show');
+        clearTimeout(toastTimer);
+      });
+    });
+  </script>
+<style id="autocomplete-tailwind-compat">
+  .ui-autocomplete {
+    max-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 10000;
+    padding: 4px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, .08);
+    color: #334155;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .ui-menu .ui-menu-item { margin: 0; }
+  .ui-menu .ui-menu-item-wrapper {
+    padding: 9px 11px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: #334155;
+    cursor: pointer;
+    line-height: 1.35;
+  }
+  .ui-menu .ui-menu-item-wrapper.ui-state-active {
+    margin: 0;
+    border-color: transparent;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+  .ui-helper-hidden-accessible {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+  .ui-widget.ui-widget-content { border-color: #cbd5e1; }
+</style>
+
+</body>
+</html>
