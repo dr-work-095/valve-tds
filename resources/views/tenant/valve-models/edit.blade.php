@@ -1,6 +1,5 @@
 <x-layouts.dashboard :page-title="'Edit valve model'" :admin-mode="false" :tenant="$tenant" :user="$user">
-    <div class="p-4 sm:p-6 lg:p-8">
-        <a href="{{ route('tenant.valve-models.index') }}" class="text-sm font-medium text-blue-700">← Valve models</a>
+    <div class="p-4 sm:p-6 lg:p-8">        
         <h1 class="mt-3 mb-5 text-2xl font-semibold text-slate-900">Edit valve model</h1>
         <form method="POST" action="{{ route('tenant.valve-models.update', $valveModel) }}" enctype="multipart/form-data">
             @method('PUT')
