@@ -75,6 +75,7 @@
     @endif
 
     <section class="overflow-hidden dark:bg-slate-800">
+        <h1 class="sr-only">Tenant management</h1>
         <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-700/60 sm:px-6">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>

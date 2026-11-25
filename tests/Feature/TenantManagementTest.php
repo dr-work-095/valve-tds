@@ -274,6 +274,11 @@ class TenantManagementTest extends TestCase
             ['name' => 'First User', 'email' => 'first@example.test', 'password' => 'secure-password', 'is_active' => true],
             ['name' => 'Second User', 'email' => 'second@example.test', 'password' => 'secure-password', 'is_active' => true],
         ]);
+        app(TenantPlanLimits::class)->setLimits($tenant, [
+            'active_users_limit' => 2,
+            'active_valve_models_limit' => null,
+            'monthly_pdfs_limit' => null,
+        ]);
 
         expect(fn () => app(TenantPlanLimits::class)->assertCanAddActiveUser($tenant))
             ->toThrow(ValidationException::class, 'allows a maximum of 2 active_users');

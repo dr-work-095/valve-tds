@@ -21,6 +21,9 @@ class UpdateTenantRequest extends FormRequest
             'status' => ['required', Rule::in(Tenant::STATUSES)],
             'subscription_ends_at' => ['nullable', 'date'],
             'payment_note' => ['nullable', 'string', 'max:2000'],
+            'active_users_limit' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'active_valve_models_limit' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'monthly_pdfs_limit' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ];
     }
 }

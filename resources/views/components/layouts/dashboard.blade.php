@@ -68,32 +68,15 @@
                                 </svg>
                                 <span class="nav-label">Valve models</span>
                             </a>
-                        @else
-                            <span class="nav-link flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400" aria-disabled="true" title="Company Admin access required">
-                                <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                                    <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
-                                </svg>
-                                <span class="nav-label">Valve models</span>
-                            </span>
                         @endif
-                        <span class="nav-link flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400" aria-disabled="true" title="Available in the next setup phase">
-                            <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                                <path d="M4 8h16M4 16h16M7 5v6m10-6v6M7 13v6m10-6v6"/><circle cx="12" cy="12" r="2"/>
-                            </svg>
-                            <span class="nav-label">Valve Models</span>
-                        </span>
-                        <span class="nav-link flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400" aria-disabled="true" title="Available in the next setup phase">
-                            <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                                <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/>
-                            </svg>
-                            <span class="nav-label">Materials &amp; BOM</span>
-                        </span>
-                        <span class="nav-link flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400" aria-disabled="true" title="Available in the next setup phase">
+                        <a href="{{ route('tenant.datasheets.index') }}"
+                            @class(['nav-link flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition', 'bg-blue-50 font-semibold text-blue-700' => request()->routeIs('tenant.datasheets.*')])
+                            @if (request()->routeIs('tenant.datasheets.*')) aria-current="page" @endif>
                             <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                                 <path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>
                             </svg>
                             <span class="nav-label">Datasheets</span>
-                        </span>
+                        </a>
                     @endif
                 </nav>
             </div>

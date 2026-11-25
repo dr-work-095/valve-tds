@@ -260,13 +260,15 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     }
 }
 
-/* Shared listing-table styling for Valve Models and Tenants */
+/* Shared listing-table styling for Datasheets, Valve Models, and Tenants */
+#datasheetsTable_wrapper table.dataTable,
 #valveModelsTable_wrapper table.dataTable,
 #tenantsTable_wrapper table.dataTable {
     border-collapse: collapse !important;
     width: 100% !important;
 }
 
+#datasheetsTable_wrapper table.dataTable thead th,
 #valveModelsTable_wrapper table.dataTable thead th,
 #tenantsTable_wrapper table.dataTable thead th {
     border-bottom: 1px solid rgb(241 245 249) !important;
@@ -280,6 +282,7 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     white-space: nowrap;
 }
 
+#datasheetsTable_wrapper table.dataTable tbody td,
 #valveModelsTable_wrapper table.dataTable tbody td,
 #tenantsTable_wrapper table.dataTable tbody td {
     border-bottom: 1px solid rgb(241 245 249) !important;
@@ -290,11 +293,13 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     vertical-align: middle;
 }
 
+#datasheetsTable_wrapper table.dataTable tbody tr:hover,
 #valveModelsTable_wrapper table.dataTable tbody tr:hover,
 #tenantsTable_wrapper table.dataTable tbody tr:hover {
     background: rgb(248 250 252) !important;
 }
 
+#datasheetsTable_wrapper .dt-footer,
 #valveModelsTable_wrapper .dt-footer,
 #tenantsTable_wrapper .dt-footer {
     display: flex;
@@ -307,12 +312,14 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     padding: 0.75rem 1rem;
 }
 
+#datasheetsTable_wrapper .dt-info,
 #valveModelsTable_wrapper .dt-info,
 #tenantsTable_wrapper .dt-info {
     color: rgb(100 116 139);
     font-size: 0.75rem;
 }
 
+#datasheetsTable_wrapper .dt-paging nav,
 #valveModelsTable_wrapper .dt-paging nav,
 #tenantsTable_wrapper .dt-paging nav {
     display: flex;
@@ -320,6 +327,8 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     gap: 0.25rem;
 }
 
+#datasheetsTable_wrapper .dt-paging-button,
+#datasheetsTable_wrapper .paginate_button,
 #valveModelsTable_wrapper .dt-paging-button,
 #tenantsTable_wrapper .dt-paging-button,
 #valveModelsTable_wrapper .paginate_button,
@@ -341,6 +350,8 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     text-decoration: none !important;
 }
 
+#datasheetsTable_wrapper .dt-paging-button.current,
+#datasheetsTable_wrapper .paginate_button.current,
 #valveModelsTable_wrapper .dt-paging-button.current,
 #tenantsTable_wrapper .dt-paging-button.current,
 #valveModelsTable_wrapper .paginate_button.current,
@@ -350,6 +361,8 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     color: white !important;
 }
 
+#datasheetsTable_wrapper .dt-paging-button.disabled,
+#datasheetsTable_wrapper .paginate_button.disabled,
 #valveModelsTable_wrapper .dt-paging-button.disabled,
 #tenantsTable_wrapper .dt-paging-button.disabled,
 #valveModelsTable_wrapper .paginate_button.disabled,
@@ -359,6 +372,7 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
     color: rgb(148 163 184) !important;
 }
 
+html.dark #datasheetsTable_wrapper table.dataTable thead th,
 html.dark #valveModelsTable_wrapper table.dataTable thead th,
 html.dark #tenantsTable_wrapper table.dataTable thead th {
     border-bottom-color: rgb(51 65 85) !important;
@@ -366,12 +380,14 @@ html.dark #tenantsTable_wrapper table.dataTable thead th {
     color: rgb(100 116 139);
 }
 
+html.dark #datasheetsTable_wrapper table.dataTable tbody td,
 html.dark #valveModelsTable_wrapper table.dataTable tbody td,
 html.dark #tenantsTable_wrapper table.dataTable tbody td {
     border-bottom-color: rgb(51 65 85 / 50%) !important;
     color: rgb(203 213 225);
 }
 
+html.dark #datasheetsTable_wrapper .dt-footer,
 html.dark #valveModelsTable_wrapper .dt-footer,
 html.dark #tenantsTable_wrapper .dt-footer {
     border-color: rgb(51 65 85);
@@ -380,6 +396,7 @@ html.dark #tenantsTable_wrapper .dt-footer {
 }
 
 @media (max-width: 639px) {
+    #datasheetsTable_wrapper .dt-footer,
     #valveModelsTable_wrapper .dt-footer,
     #tenantsTable_wrapper .dt-footer {
         flex-direction: column;

@@ -49,6 +49,18 @@
                         value="{{ old('subscription_ends_at') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     @error('subscription_ends_at') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
                 </div>
+                <div>
+                    <label for="active_users_limit" class="mb-1 block text-sm font-medium text-slate-700">Active user limit</label>
+                    <input id="active_users_limit" name="active_users_limit" type="number" min="0" value="{{ old('active_users_limit') }}" placeholder="Unlimited" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label for="active_valve_models_limit" class="mb-1 block text-sm font-medium text-slate-700">Active model limit</label>
+                    <input id="active_valve_models_limit" name="active_valve_models_limit" type="number" min="0" value="{{ old('active_valve_models_limit') }}" placeholder="Unlimited" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label for="monthly_pdfs_limit" class="mb-1 block text-sm font-medium text-slate-700">Monthly datasheet limit</label>
+                    <input id="monthly_pdfs_limit" name="monthly_pdfs_limit" type="number" min="0" value="{{ old('monthly_pdfs_limit') }}" placeholder="Unlimited" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
                 <div class="sm:col-span-2">
                     <label for="admin_notes" class="mb-1 block text-sm font-medium text-slate-700">Admin notes</label>
                     <textarea id="admin_notes" name="admin_notes" rows="3" maxlength="5000"

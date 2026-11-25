@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ValveModel extends Model
 {
@@ -28,5 +29,22 @@ class ValveModel extends Model
             'custom_attributes' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function dimensions(): HasMany
+    {
+        return $this->hasMany(ValveDimension::class);
+    }
+
+    public function bomTemplates(): HasMany
+    {
+        return $this->hasMany(ValveBomTemplate::class);
+    }
+
+    public function isReady(): bool
+    {
+        return $this->is_active
+            && $this->dimensions()->exists()
+            && $this->bomTemplates()->exists();
     }
 }

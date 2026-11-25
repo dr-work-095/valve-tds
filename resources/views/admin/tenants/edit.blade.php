@@ -60,6 +60,24 @@
                         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('payment_note') }}</textarea>
                     @error('payment_note') <p class="mt-1 text-sm text-red-700">{{ $message }}</p> @enderror
                 </div>
+                <div>
+                    <label for="active_users_limit" class="mb-1 block text-sm font-medium text-slate-700">Active user limit</label>
+                    <input id="active_users_limit" name="active_users_limit" type="number" min="0"
+                        value="{{ old('active_users_limit', app(\App\Support\TenantPlanLimits::class)->limit($tenant, 'active_users')) }}"
+                        placeholder="Unlimited" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label for="active_valve_models_limit" class="mb-1 block text-sm font-medium text-slate-700">Active model limit</label>
+                    <input id="active_valve_models_limit" name="active_valve_models_limit" type="number" min="0"
+                        value="{{ old('active_valve_models_limit', app(\App\Support\TenantPlanLimits::class)->limit($tenant, 'active_valve_models')) }}"
+                        placeholder="Unlimited" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label for="monthly_pdfs_limit" class="mb-1 block text-sm font-medium text-slate-700">Monthly datasheet limit</label>
+                    <input id="monthly_pdfs_limit" name="monthly_pdfs_limit" type="number" min="0"
+                        value="{{ old('monthly_pdfs_limit', app(\App\Support\TenantPlanLimits::class)->limit($tenant, 'monthly_pdfs')) }}"
+                        placeholder="Unlimited" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
             </div>
             <button type="submit" class="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Save subscription</button>
         </form>

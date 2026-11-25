@@ -43,7 +43,7 @@
                         <h3 class="text-sm font-medium text-slate-800">{{ $title }}</h3>
                         <p class="mt-1 text-sm text-slate-500">{{ $description }}</p>
                     </div>
-                    <span class="ml-auto shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">Next phase</span>
+                    <span class="ml-auto shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{{ $step === '3' ? 'Available' : 'Configured' }}</span>
                 </div>
             @endforeach
         </div>

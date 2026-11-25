@@ -63,6 +63,8 @@ class TenantController extends Controller
             $tenant->setInternal('provisioning_error', null);
             $tenant->save();
 
+            $planLimits->setLimits($tenant, $validated);
+
             $planLimits->assertCanAddActiveUser($tenant);
 
             $tenant->users()->create([
@@ -123,6 +125,8 @@ class TenantController extends Controller
             }
 
             $lockedTenant->save();
+
+            app(TenantPlanLimits::class)->setLimits($lockedTenant, $validated);
         });
 
         return redirect()->route('admin.tenants.edit', $tenant)->with('status', 'Tenant subscription updated.');

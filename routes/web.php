@@ -5,9 +5,13 @@ use App\Http\Controllers\Admin\TenantDataTableController;
 use App\Http\Controllers\AdminSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Tenant\CompanySettingsController;
+use App\Http\Controllers\Tenant\DatasheetController;
+use App\Http\Controllers\Tenant\DatasheetDataTableController;
 use App\Http\Controllers\Tenant\MaterialController;
 use App\Http\Controllers\Tenant\MaterialDataTableController;
 use App\Http\Controllers\Tenant\MediaController;
+use App\Http\Controllers\Tenant\ValveBomTemplateController;
+use App\Http\Controllers\Tenant\ValveDimensionController;
 use App\Http\Controllers\Tenant\ValveModelController;
 use App\Http\Controllers\Tenant\ValveModelDataTableController;
 use App\Http\Controllers\TenantSessionController;
@@ -42,6 +46,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 Route::middleware(['auth:web', 'tenant.initialize'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'tenant'])->name('dashboard');
+    Route::get('/datasheets/data', DatasheetDataTableController::class)->name('tenant.datasheets.data');
+    Route::resource('datasheets', DatasheetController::class)
+        ->only(['index', 'create', 'store'])
+        ->names([
+            'index' => 'tenant.datasheets.index',
+            'create' => 'tenant.datasheets.create',
+            'store' => 'tenant.datasheets.store',
+        ]);
+    Route::post('/datasheets/{datasheet}/revision', [DatasheetController::class, 'revision'])
+        ->name('tenant.datasheets.revision');
+    Route::get('/datasheet-lookups/models', [DatasheetController::class, 'modelsLookup'])
+        ->name('tenant.datasheets.lookups.models');
+    Route::get('/datasheet-lookups/models/{valveModel}', [DatasheetController::class, 'modelLookup'])
+        ->name('tenant.datasheets.lookups.model');
 
     Route::middleware('tenant.admin')->group(function () {
         Route::get('/settings', [CompanySettingsController::class, 'edit'])->name('tenant.settings.edit');
@@ -68,6 +86,16 @@ Route::middleware(['auth:web', 'tenant.initialize'])->group(function () {
                 'update' => 'tenant.valve-models.update',
             ])
             ->except(['show', 'destroy']);
+        Route::prefix('valve-models/{valveModel}')->name('tenant.valve-models.')->group(function () {
+            Route::get('/dimensions', [ValveDimensionController::class, 'index'])->name('dimensions.index');
+            Route::post('/dimensions', [ValveDimensionController::class, 'store'])->name('dimensions.store');
+            Route::put('/dimensions/{dimension}', [ValveDimensionController::class, 'update'])->name('dimensions.update');
+            Route::delete('/dimensions/{dimension}', [ValveDimensionController::class, 'destroy'])->name('dimensions.destroy');
+            Route::get('/bom', [ValveBomTemplateController::class, 'index'])->name('bom.index');
+            Route::post('/bom', [ValveBomTemplateController::class, 'store'])->name('bom.store');
+            Route::put('/bom/{bom}', [ValveBomTemplateController::class, 'update'])->name('bom.update');
+            Route::delete('/bom/{bom}', [ValveBomTemplateController::class, 'destroy'])->name('bom.destroy');
+        });
     });
 
     Route::get('/media/{category}/{path}', MediaController::class)

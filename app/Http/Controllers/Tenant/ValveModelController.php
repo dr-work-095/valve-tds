@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreValveModelRequest;
 use App\Http\Requests\Tenant\UpdateValveModelRequest;
+use App\Models\Material;
+use App\Models\ValveBomTemplate;
+use App\Models\ValveDimension;
 use App\Models\ValveModel;
 use App\Support\TenantPlanLimits;
+use App\Support\ValveModelReadiness;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -14,11 +18,12 @@ use Illuminate\View\View;
 
 class ValveModelController extends Controller
 {
-    public function index(): View
+    public function index(ValveModelReadiness $readiness): View
     {
         return view('tenant.valve-models.index', [
             'user' => Auth::guard('web')->user(),
             'tenant' => tenancy()->tenant,
+            'readiness' => $readiness,
         ]);
     }
 
@@ -64,7 +69,7 @@ class ValveModelController extends Controller
         return redirect()->route('tenant.valve-models.index')->with('status', 'Valve model created.');
     }
 
-    public function edit(int $valveModel): View
+    public function edit(int $valveModel, ValveModelReadiness $readiness): View
     {
         $valveModel = ValveModel::findOrFail($valveModel);
 
@@ -72,6 +77,13 @@ class ValveModelController extends Controller
             'valveModel' => $valveModel,
             'user' => Auth::guard('web')->user(),
             'tenant' => tenancy()->tenant,
+            'readiness_missing' => $readiness->missingRequirements($valveModel),
+            'dimensions' => ValveDimension::where('valve_model_id', $valveModel->id)->orderBy('size_inch')->get(),
+            'bomRows' => ValveBomTemplate::with('standardMaterial')
+                ->where('valve_model_id', $valveModel->id)
+                ->orderBy('part_number')
+                ->get(),
+            'materials' => Material::where('is_active', true)->orderBy('code')->get(),
         ]);
     }
 

@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\ValveModelDataTableRequest;
 use App\Models\ValveModel;
+use App\Support\ValveModelReadiness;
 use Illuminate\Http\JsonResponse;
 
 class ValveModelDataTableController extends Controller
 {
     private const COLUMNS = [0 => 'name', 1 => 'category', 2 => 'design_standard', 3 => 'testing_standard', 4 => 'is_active'];
 
-    public function __invoke(ValveModelDataTableRequest $request): JsonResponse
+    public function __invoke(ValveModelDataTableRequest $request, ValveModelReadiness $readiness): JsonResponse
     {
         $validated = $request->validated();
         $query = ValveModel::query();
@@ -50,6 +51,7 @@ class ValveModelDataTableController extends Controller
                 'design_standard' => $model->design_standard,
                 'testing_standard' => $model->testing_standard,
                 'is_active' => $model->is_active,
+                'readiness_missing' => $readiness->missingRequirements($model),
                 'edit_url' => route('tenant.valve-models.edit', $model),
             ]),
         ]);

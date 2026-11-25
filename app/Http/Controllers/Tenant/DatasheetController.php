@@ -1,0 +1,182 @@
+<?php
+
+namespace App\Http\Controllers\Tenant;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\StoreGeneratedDatasheetRequest;
+use App\Models\GeneratedDatasheet;
+use App\Models\Material;
+use App\Models\ValveDimension;
+use App\Models\ValveModel;
+use App\Support\DatasheetSnapshotBuilder;
+use App\Support\TenantPlanLimits;
+use App\Support\ValveModelReadiness;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+
+class DatasheetController extends Controller
+{
+    public function index(): View
+    {
+        return view('tenant.datasheets.index', [
+            'user' => Auth::guard('web')->user(),
+            'tenant' => tenancy()->tenant,
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('tenant.datasheets.create', [
+            'user' => Auth::guard('web')->user(),
+            'tenant' => tenancy()->tenant,
+            'models' => (new ValveModelReadiness)->selectableQuery()->orderBy('name')->get(),
+            'company' => DB::connection('tenant')->table('company_settings')->where('id', 1)->first(),
+            'activeMaterials' => Material::where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
+        ]);
+    }
+
+    public function modelsLookup(): JsonResponse
+    {
+        $models = (new ValveModelReadiness)->selectableQuery()
+            ->orderBy('name')
+            ->get(['id', 'name', 'category']);
+
+        return response()->json(['data' => $models]);
+    }
+
+    public function modelLookup(int $valveModel): JsonResponse
+    {
+        $model = (new ValveModelReadiness)->selectableQuery()->findOrFail($valveModel);
+
+        return response()->json([
+            'model' => $model->only(['id', 'name', 'category', 'design_standard', 'testing_standard']),
+            'dimensions' => $model->dimensions()->orderBy('size_inch')->orderBy('pressure_class')->get(),
+            'bom' => $model->bomTemplates()->with('standardMaterial')->orderBy('part_number')->get(),
+        ]);
+    }
+
+    public function store(
+        StoreGeneratedDatasheetRequest $request,
+        TenantPlanLimits $planLimits,
+        DatasheetSnapshotBuilder $snapshotBuilder,
+    ): RedirectResponse {
+        $tenant = tenancy()->tenant;
+        $validated = $request->validated();
+        $model = ValveModel::findOrFail($validated['valve_model_id']);
+        $dimension = ValveDimension::find($validated['dimension_id']);
+        if (! $dimension || $dimension->valve_model_id !== $model->id) {
+            throw ValidationException::withMessages([
+                'dimension_id' => 'The selected dimension does not belong to the valve model.',
+            ]);
+        }
+        $company = (array) (DB::connection('tenant')->table('company_settings')->where('id', 1)->first() ?? []);
+
+        $snapshot = $snapshotBuilder->build(
+            $model,
+            $dimension,
+            $validated['bom_materials'],
+            $company,
+            $validated,
+        );
+
+        $datasheet = DB::connection('tenant')->transaction(function () use (
+            $tenant,
+            $planLimits,
+            $validated,
+            $snapshot,
+        ): GeneratedDatasheet {
+            $monthLimit = $planLimits->limit($tenant, 'monthly_pdfs');
+            if ($monthLimit !== null) {
+                $monthStart = now()->startOfMonth();
+                $monthCount = GeneratedDatasheet::where('created_at', '>=', $monthStart)->lockForUpdate()->count();
+                if ($monthCount >= $monthLimit) {
+                    throw ValidationException::withMessages([
+                        'monthly_pdfs' => "The tenant limit of {$monthLimit} datasheets per month has been reached.",
+                    ]);
+                }
+            }
+
+            $documentNumber = trim((string) ($validated['document_number'] ?? ''));
+            if ($documentNumber === '') {
+                $documentNumber = 'TDS-'.now()->format('Y-m').'-'.str_pad((string) (GeneratedDatasheet::count() + 1), 4, '0', STR_PAD_LEFT);
+            }
+
+            $base = $documentNumber;
+            $suffix = 1;
+            while (GeneratedDatasheet::where('document_number', $base)->where('revision', 'Rev 0')->exists()) {
+                $base = $documentNumber.'-'.$suffix;
+                $suffix++;
+            }
+
+            return GeneratedDatasheet::create([
+                'created_by_user_id' => (int) Auth::guard('web')->id(),
+                'valve_model_id' => (int) $validated['valve_model_id'],
+                'document_number' => $base,
+                'revision' => 'Rev 0',
+                'client_name' => $validated['client_name'],
+                'project_reference' => $validated['project_reference'] ?? null,
+                'selected_specs' => $snapshot,
+                'status' => 'queued',
+            ]);
+        });
+
+        return redirect()->route('tenant.datasheets.index')->with('status', 'Datasheet created.');
+    }
+
+    public function revision(int $datasheet, TenantPlanLimits $planLimits): RedirectResponse
+    {
+        $tenant = tenancy()->tenant;
+        $source = GeneratedDatasheet::findOrFail($datasheet);
+        if ($source->status !== 'generated') {
+            throw ValidationException::withMessages([
+                'status' => 'A revision can only be created from a generated datasheet.',
+            ]);
+        }
+        $monthLimit = $planLimits->limit($tenant, 'monthly_pdfs');
+
+        $revision = DB::connection('tenant')->transaction(function () use ($source, $monthLimit): GeneratedDatasheet {
+            $locked = GeneratedDatasheet::whereKey($source->id)->lockForUpdate()->firstOrFail();
+            if ($monthLimit !== null) {
+                $monthCount = GeneratedDatasheet::where('created_at', '>=', now()->startOfMonth())->lockForUpdate()->count();
+                if ($monthCount >= $monthLimit) {
+                    throw ValidationException::withMessages([
+                        'monthly_pdfs' => "The tenant limit of {$monthLimit} datasheets per month has been reached.",
+                    ]);
+                }
+            }
+
+            $rootId = $locked->parent_datasheet_id ?? $locked->id;
+            $latest = GeneratedDatasheet::where('document_number', $locked->document_number)
+                ->where(function ($query) use ($rootId): void {
+                    $query->where('id', $rootId)->orWhere('parent_datasheet_id', $rootId);
+                })
+                ->lockForUpdate()
+                ->get();
+
+            $nextRevision = 1 + $latest
+                ->map(fn (GeneratedDatasheet $row): int => (int) filter_var($row->revision, FILTER_SANITIZE_NUMBER_INT))
+                ->max();
+
+            return GeneratedDatasheet::create([
+                ...$locked->only([
+                    'created_by_user_id',
+                    'valve_model_id',
+                    'document_number',
+                    'parent_datasheet_id',
+                    'client_name',
+                    'project_reference',
+                    'selected_specs',
+                ]),
+                'parent_datasheet_id' => $rootId,
+                'revision' => 'Rev '.$nextRevision,
+                'status' => 'queued',
+            ]);
+        });
+
+        return redirect()->route('tenant.datasheets.index')->with('status', 'Revision '.$revision->revision.' created.');
+    }
+}

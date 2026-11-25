@@ -5,8 +5,13 @@ namespace Tests\Feature;
 use App\Models\Material;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\ValveBomTemplate;
+use App\Models\ValveDimension;
 use App\Models\ValveModel;
+use App\Support\TenantPlanLimits;
+use App\Support\ValveModelReadiness;
 use Database\Seeders\TenantDatabaseSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
@@ -191,6 +196,11 @@ class TenantCatalogTest extends TestCase
         [$tenant, $admin] = $this->createTenantUser('admin');
         $tenant->plan = 'starter';
         $tenant->save();
+        app(TenantPlanLimits::class)->setLimits($tenant, [
+            'active_users_limit' => null,
+            'active_valve_models_limit' => 5,
+            'monthly_pdfs_limit' => null,
+        ]);
         $this->prepareTenantDatabase($tenant);
 
         foreach (range(1, 5) as $number) {
@@ -239,6 +249,200 @@ class TenantCatalogTest extends TestCase
         $this->assertStringStartsWith($tenant->tenant_uid.'/schematics/', $model->schematic_image_path);
         Storage::disk('tenant_private')->assertExists($model->schematic_image_path);
         tenancy()->end();
+    }
+
+    public function test_dimension_duplicate_create_and_update_are_rejected(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Gate 2',
+            'category' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $first = ValveDimension::create([
+            'valve_model_id' => $model->id,
+            'size_inch' => '2"',
+            'pressure_class' => 'Class 150',
+            'end_connection' => 'Flanged RF',
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->post(route('tenant.valve-models.dimensions.store', $model), [
+            'size_inch' => '2"',
+            'pressure_class' => 'Class 150',
+            'end_connection' => 'Flanged RF',
+        ])->assertSessionHasErrors('size_inch');
+
+        tenancy()->initialize($tenant);
+        $second = ValveDimension::create([
+            'valve_model_id' => $model->id,
+            'size_inch' => '4"',
+            'pressure_class' => 'Class 300',
+            'end_connection' => 'Butt Weld',
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->put(route('tenant.valve-models.dimensions.update', [$model, $second]), [
+            'size_inch' => '2"',
+            'pressure_class' => 'Class 150',
+            'end_connection' => 'Flanged RF',
+        ])->assertSessionHasErrors('size_inch');
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(2, ValveDimension::where('valve_model_id', $model->id)->count());
+        $this->assertNotNull($first->fresh());
+        tenancy()->end();
+    }
+
+    public function test_nullable_dimension_measurements_and_database_tuple_constraint_are_supported(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Ball 1',
+            'category' => 'Ball',
+            'design_standard' => 'API 6D',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $dimension = ValveDimension::create([
+            'valve_model_id' => $model->id,
+            'size_inch' => '6"',
+            'size_dn' => null,
+            'pressure_class' => 'Class 600',
+            'end_connection' => 'RTJ',
+            'face_to_face_mm' => null,
+            'extra_dimensions' => ['seat_width' => null],
+        ]);
+        $this->assertNull($dimension->face_to_face_mm);
+        $this->assertNull($dimension->size_dn);
+
+        $this->expectException(QueryException::class);
+        ValveDimension::create([
+            'valve_model_id' => $model->id,
+            'size_inch' => '6"',
+            'pressure_class' => 'Class 600',
+            'end_connection' => 'RTJ',
+        ]);
+    }
+
+    public function test_bom_order_duplicate_and_active_tenant_material_validation(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Globe 1',
+            'category' => 'Globe',
+            'design_standard' => 'BS 1414',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $material = Material::where('is_active', true)->firstOrFail();
+        ValveBomTemplate::create([
+            'valve_model_id' => $model->id,
+            'part_number' => 2,
+            'part_name' => 'Stem',
+            'standard_material_id' => $material->id,
+        ]);
+        ValveBomTemplate::create([
+            'valve_model_id' => $model->id,
+            'part_number' => 1,
+            'part_name' => 'Body',
+            'standard_material_id' => $material->id,
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->post(route('tenant.valve-models.bom.store', $model), [
+            'part_number' => 1,
+            'part_name' => 'Duplicate',
+            'standard_material_id' => $material->id,
+        ])->assertSessionHasErrors('part_number');
+
+        tenancy()->initialize($tenant);
+        $ordered = ValveBomTemplate::where('valve_model_id', $model->id)->orderBy('part_number')->pluck('part_number')->all();
+        $this->assertSame([1, 2], $ordered);
+
+        $inactive = Material::create([
+            'code' => 'INACTIVE-1',
+            'name' => 'Inactive',
+            'category' => 'Trim/Stem',
+            'is_active' => false,
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->post(route('tenant.valve-models.bom.store', $model), [
+            'part_number' => 3,
+            'part_name' => 'Seat',
+            'standard_material_id' => $inactive->id,
+        ])->assertSessionHasErrors('standard_material_id');
+    }
+
+    public function test_model_readiness_requires_active_model_dimension_and_bom(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Check 1',
+            'category' => 'Check',
+            'design_standard' => 'API 6D',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $readiness = app(ValveModelReadiness::class);
+
+        $this->assertFalse($readiness->isReady($model));
+        $this->assertSame([
+            'At least one dimension row is required.',
+            'At least one BOM row is required.',
+        ], $readiness->missingRequirements($model));
+
+        ValveDimension::create([
+            'valve_model_id' => $model->id,
+            'size_inch' => '3"',
+            'pressure_class' => 'Class 150',
+            'end_connection' => 'Flanged RF',
+        ]);
+        $material = Material::where('is_active', true)->firstOrFail();
+        ValveBomTemplate::create([
+            'valve_model_id' => $model->id,
+            'part_number' => 1,
+            'part_name' => 'Body',
+            'standard_material_id' => $material->id,
+        ]);
+
+        $this->assertTrue($readiness->isReady($model));
+        $this->assertTrue(app(ValveModelReadiness::class)->selectableQuery()->whereKey($model->id)->exists());
+        tenancy()->end();
+    }
+
+    public function test_valve_model_edit_page_contains_dimension_and_bom_tabs_and_modals(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Tabbed Gate',
+            'category' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')
+            ->get(route('tenant.valve-models.edit', $model))
+            ->assertOk()
+            ->assertSee('data-tab="dimensions"', false)
+            ->assertSee('data-tab="bom"', false)
+            ->assertSee('id="dimension-modal"', false)
+            ->assertSee('id="bom-modal"', false);
     }
 
     private function createTenantUser(string $role): array

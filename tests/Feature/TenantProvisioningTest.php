@@ -79,6 +79,11 @@ class TenantProvisioningTest extends TestCase
     {
         $tenant = $this->createTenant();
         $limits = app(TenantPlanLimits::class);
+        $limits->setLimits($tenant, [
+            'active_valve_models_limit' => 5,
+            'monthly_pdfs_limit' => 100,
+            'active_users_limit' => null,
+        ]);
 
         expect(fn () => $limits->assertWithinLimit($tenant, 'active_valve_models', 5))
             ->toThrow(ValidationException::class, 'allows a maximum of 5 active_valve_models');

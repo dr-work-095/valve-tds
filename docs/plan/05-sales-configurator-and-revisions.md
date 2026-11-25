@@ -88,3 +88,46 @@ revision history.
 - Datasheet listing and configurator UI/endpoints.
 - Immutable snapshot creation and monthly quota enforcement.
 - Conflict-safe revision creation and history display.
+
+## Implementation status
+
+The Phase 5 datasheet implementation is complete for the current MVP surface:
+
+- Added tenant-scoped `generated_datasheets` persistence with unique document/revision
+  constraints, immutable JSON snapshots, private PDF fields, and parent revision links.
+- Added Sales-accessible datasheet listing, configurator, tenant-scoped lookup
+  endpoints, and ready-model filtering.
+- Datasheet snapshots freeze company data, model metadata, selected dimensions,
+  ordered BOM parts, resolved material display values, notes, and client/project data.
+- Cross-model dimensions and forged/inactive/ineligible BOM material selections are
+  rejected server-side.
+- Revisions clone the source snapshot, allocate monotonic revision numbers, and link
+  to the original datasheet without overwriting prior records.
+- Super Admin controls dynamic per-tenant limits for active users, active valve
+  models, and monthly datasheets. Blank limit values mean unlimited.
+- Creation and revision quota checks use tenant-specific values and database
+  transactions/locks for the configured boundaries.
+
+The focused configurator suite passes for dynamic quota boundaries, snapshot
+immutability, cross-model validation, and revision linkage.
+
+### QA checklist
+
+- Confirm Super Admin can set or clear active-user, active-model, and monthly
+  datasheet limits for each tenant.
+- Create datasheets at the configured monthly limit, then confirm the next creation
+  is rejected and concurrent submissions cannot exceed the limit.
+- Confirm changing a tenant limit takes effect without code deployment or restart.
+- Select a ready model and verify dimensions and allowed BOM materials populate.
+- Submit a forged dimension or material from another model/tenant and confirm
+  validation rejects it.
+- Edit source company, model, dimension, or material records after creation and
+  confirm the existing snapshot remains unchanged.
+- Create revisions only from generated datasheets and confirm each revision number
+  is monotonic and linked to the original.
+- Confirm document number/revision uniqueness is enforced by the database.
+- Run focused coverage with:
+
+```sh
+php artisan test --compact tests/Feature/TenantConfiguratorTest.php tests/Feature/TenantManagementTest.php
+```
