@@ -1,3 +1,7 @@
+import { createIcons, Plus } from 'lucide';
+
+createIcons({ icons: { Plus } });
+
 const sidebar = document.getElementById('sidebar');
 const mobileBackdrop = document.getElementById('mobileBackdrop');
 const collapseButton = document.getElementById('collapseBtn');

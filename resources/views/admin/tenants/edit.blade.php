@@ -19,7 +19,7 @@
     @endif
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.75fr)]">
-        <form method="POST" action="{{ route('admin.tenants.update', $tenant) }}" class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+        <form method="POST" action="{{ route('admin.tenants.update', $tenant) }}">
             @csrf
             @method('PUT')
             <h2 class="text-base font-semibold text-slate-900">Subscription and account</h2>

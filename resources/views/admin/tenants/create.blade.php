@@ -17,7 +17,7 @@
 
     <form method="POST" action="{{ route('admin.tenants.store') }}" class="space-y-6">
         @csrf
-        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+        <section>
             <h2 class="text-base font-semibold text-slate-900">Company and subscription</h2>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div class="sm:col-span-2">
@@ -57,7 +57,7 @@
             </div>
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+        <section>
             <h2 class="text-base font-semibold text-slate-900">Initial Company Admin</h2>
             <p class="mt-1 text-sm text-slate-500">The temporary password must be at least 12 characters.</p>
             <div class="mt-4 grid gap-4 sm:grid-cols-2">

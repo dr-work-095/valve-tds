@@ -4,7 +4,7 @@
         <div role="status" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div>
     @endif
 
-    <form method="POST" action="{{ route('tenant.settings.update') }}" enctype="multipart/form-data" class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+    <form method="POST" action="{{ route('tenant.settings.update') }}" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         <div class="grid gap-4 sm:grid-cols-2">
