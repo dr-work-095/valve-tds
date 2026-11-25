@@ -10,11 +10,16 @@
                 <h2 class="text-base font-medium text-slate-900 dark:text-white">Materials</h2>
                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Manage reusable valve material records.</p>
             </div>
-            <a href="{{ route('tenant.materials.create') }}"
-                class="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700">
-                <i data-lucide="plus" class="mr-2 h-4 w-4" aria-hidden="true"></i>
-                Add material
-            </a>
+            <div class="flex items-center gap-3">
+                <label for="materialsSearch" class="sr-only">Search materials</label>
+                <input id="materialsSearch" type="search" placeholder="Search materials"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:bg-white sm:w-64 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500">
+                <a href="{{ route('tenant.materials.create') }}"
+                    class="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700">
+                    <i data-lucide="plus" class="mr-2 h-4 w-4" aria-hidden="true"></i>
+                    Add material
+                </a>
+            </div>
         </div>
         <div class="overflow-x-auto">
             <table id="materialsTable" class="w-full text-left text-sm">
@@ -39,8 +44,7 @@
         <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
         <script>
             $(function() {
-                $('#materialsTable').DataTable({
-                    processing: true,
+                const table = $('#materialsTable').DataTable({                    
                     serverSide: true,
                     pageLength: 10,
                     lengthMenu: [10, 25, 50, 100],                
@@ -81,6 +85,17 @@
                         link.textContent = 'Edit';
                         action.appendChild(link);
                     }
+                });
+
+                let searchTimeout;
+
+                $('#materialsSearch').on('input', function() {
+                    const searchValue = this.value;
+                    clearTimeout(searchTimeout);
+
+                    searchTimeout = setTimeout(function() {
+                        table.search(searchValue).draw();
+                    }, 300);
                 });
             });
         </script>
