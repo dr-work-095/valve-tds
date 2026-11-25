@@ -12,6 +12,7 @@ use Database\Seeders\TenantDatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class TenantConfiguratorTest extends TestCase
@@ -36,6 +37,7 @@ class TenantConfiguratorTest extends TestCase
 
     public function test_dynamic_monthly_quota_blocks_at_configured_limit(): void
     {
+        Queue::fake();
         [$tenant, $sales] = $this->createTenantUser('sales');
         app(TenantPlanLimits::class)->setLimits($tenant, [
             'monthly_pdfs_limit' => 2,
@@ -76,6 +78,7 @@ class TenantConfiguratorTest extends TestCase
 
     public function test_snapshot_is_immutable_and_revision_has_monotonic_unique_number(): void
     {
+        Queue::fake();
         [$tenant, $sales] = $this->createTenantUser('sales');
         app(TenantPlanLimits::class)->setLimits($tenant, ['monthly_pdfs_limit' => null]);
         $this->prepareTenantDatabase($tenant);

@@ -13,6 +13,7 @@
         "fruitcake/laravel-debugbar": "^4.4",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
+        "spatie/browsershot": "^5.5",
         "stancl/tenancy": "^3.10"
     },
     "require-dev": {
@@ -49,7 +50,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --queue=provisioning,default --tries=3 --timeout=270\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --queue=provisioning,high,low,default --tries=3 --timeout=270\" \"npm run dev\" --names='server,queue,vite'"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

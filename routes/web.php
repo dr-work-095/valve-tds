@@ -56,6 +56,10 @@ Route::middleware(['auth:web', 'tenant.initialize'])->group(function () {
         ]);
     Route::post('/datasheets/{datasheet}/revision', [DatasheetController::class, 'revision'])
         ->name('tenant.datasheets.revision');
+    Route::get('/datasheets/{datasheet}/download', [DatasheetController::class, 'download'])
+        ->name('tenant.datasheets.download');
+    Route::post('/datasheets/{datasheet}/retry', [DatasheetController::class, 'retry'])
+        ->name('tenant.datasheets.retry');
     Route::get('/datasheet-lookups/models', [DatasheetController::class, 'modelsLookup'])
         ->name('tenant.datasheets.lookups.models');
     Route::get('/datasheet-lookups/models/{valveModel}', [DatasheetController::class, 'modelLookup'])

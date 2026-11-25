@@ -41,8 +41,9 @@ revision history.
 
 ### 3. Quota and snapshot creation
 
-1. For starter tenants, count datasheets created in the current calendar month and
-   reject new creation at 100 or more.
+1. Count datasheets created in the current calendar month and apply the tenant's
+   Super Admin-configured monthly datasheet limit; reject creation when that limit
+   is reached. A blank limit means unlimited.
 2. Perform quota checking and creation with an approach that avoids concurrent
    submissions exceeding the limit.
 3. Resolve selected material IDs server-side into stable display strings (code and
@@ -72,8 +73,8 @@ revision history.
 
 - Sales users can create records only for ready models and valid tenant-owned
   dimensions/materials.
-- Starter quota blocks creation at the stated monthly limit and is tested at 99, 100,
-  and concurrent boundary conditions.
+- The dynamic tenant quota blocks creation at the configured monthly limit and is
+  tested at boundary and concurrent conditions.
 - Snapshot contains all display-critical company/model/dimension/BOM/note values and
   remains unchanged after source catalog edits.
 - Revisions increment monotonically, link to their parent, and do not alter any prior

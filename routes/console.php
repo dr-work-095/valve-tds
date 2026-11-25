@@ -4,6 +4,7 @@ use App\Models\Admin;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Validation\Rule;
 
 Artisan::command('inspire', function () {
@@ -43,3 +44,5 @@ Artisan::command('admin:create', function () {
 
     return self::SUCCESS;
 })->purpose('Create a Super Admin account using interactive prompts');
+
+Schedule::command('app:expire-overdue-tenants')->dailyAt('01:00')->onOneServer();

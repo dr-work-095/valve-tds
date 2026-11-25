@@ -30,6 +30,9 @@ into sequenced implementation work and verifiable exit criteria.
   initialization. Admin routes must remain on the central connection.
 - Keep tenant uploads and generated PDFs private. Resolve media paths using the
   authenticated tenant context, not a caller-supplied tenant or arbitrary path.
+- Quotas are tenant-specific Super Admin settings for active users, active valve
+  models, and monthly datasheets. Blank values are unlimited and plan names are not
+  hardcoded quota sources.
 - Use server-side DataTables for the listings specified in the source plan, with
   search, filters, pagination, and responsive horizontal scrolling.
 - Use HTML `<datalist>` or the specified lightweight searchable autocomplete pattern

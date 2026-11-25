@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreGeneratedDatasheetRequest;
+use App\Jobs\GenerateDatasheetPdfJob;
 use App\Models\GeneratedDatasheet;
 use App\Models\Material;
 use App\Models\ValveDimension;
@@ -15,8 +16,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DatasheetController extends Controller
 {
@@ -112,7 +115,7 @@ class DatasheetController extends Controller
                 $suffix++;
             }
 
-            return GeneratedDatasheet::create([
+            $datasheet = GeneratedDatasheet::create([
                 'created_by_user_id' => (int) Auth::guard('web')->id(),
                 'valve_model_id' => (int) $validated['valve_model_id'],
                 'document_number' => $base,
@@ -122,6 +125,13 @@ class DatasheetController extends Controller
                 'selected_specs' => $snapshot,
                 'status' => 'queued',
             ]);
+
+            GenerateDatasheetPdfJob::dispatch(
+                (int) $tenant->getKey(),
+                (int) $datasheet->id,
+            );
+
+            return $datasheet;
         });
 
         return redirect()->route('tenant.datasheets.index')->with('status', 'Datasheet created.');
@@ -177,6 +187,55 @@ class DatasheetController extends Controller
             ]);
         });
 
+        GenerateDatasheetPdfJob::dispatch(
+            (int) $tenant->getKey(),
+            (int) $revision->id,
+        );
+
         return redirect()->route('tenant.datasheets.index')->with('status', 'Revision '.$revision->revision.' created.');
+    }
+
+    public function download(int $datasheet): BinaryFileResponse
+    {
+        $datasheet = GeneratedDatasheet::findOrFail($datasheet);
+        if ($datasheet->status !== 'generated' || ! $datasheet->pdf_path) {
+            abort(404);
+        }
+
+        $tenantUid = (string) tenancy()->tenant->tenant_uid;
+        $expectedPrefix = $tenantUid.'/datasheets/';
+        if (! str_starts_with($datasheet->pdf_path, $expectedPrefix)) {
+            abort(404);
+        }
+        if (! Storage::disk('tenant_private')->exists($datasheet->pdf_path)) {
+            abort(404);
+        }
+
+        $absolutePath = Storage::disk('tenant_private')->path($datasheet->pdf_path);
+
+        return response()->download($absolutePath, basename($datasheet->pdf_path), [
+            'Content-Type' => 'application/pdf',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store, no-cache',
+        ]);
+    }
+
+    public function retry(int $datasheet): RedirectResponse
+    {
+        $datasheet = GeneratedDatasheet::findOrFail($datasheet);
+        if ($datasheet->status !== 'failed') {
+            return back()->withErrors(['status' => 'Only failed datasheets can be retried.']);
+        }
+
+        $datasheet->update([
+            'status' => 'queued',
+            'pdf_path' => null,
+        ]);
+        GenerateDatasheetPdfJob::dispatch(
+            (int) tenancy()->tenant->getKey(),
+            (int) $datasheet->id,
+        );
+
+        return redirect()->route('tenant.datasheets.index')->with('status', 'PDF generation retry queued.');
     }
 }

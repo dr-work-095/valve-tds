@@ -46,6 +46,8 @@ class DatasheetDataTableController extends Controller
                 'status' => $row->status,
                 'created_at' => $row->created_at?->format('Y-m-d H:i'),
                 'revision_url' => route('tenant.datasheets.revision', $row),
+                'download_url' => route('tenant.datasheets.download', $row),
+                'retry_url' => route('tenant.datasheets.retry', $row),
             ]),
         ]);
     }

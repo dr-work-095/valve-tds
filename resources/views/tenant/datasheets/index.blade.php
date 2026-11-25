@@ -52,12 +52,15 @@
                         {data:'created_at'},
                         {data:'revision_url', orderable:false, render:function(url, type, row) {
                             if (row.status === 'generated') {
-                                return '<form method="POST" action="'+url+'"><input type="hidden" name="_token" value="{{ csrf_token() }}"><button class="inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800" type="submit">Create revision</button></form>';
+                                return '<div class="flex items-center gap-2">'+
+                                    '<a class="inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800" href="'+row.download_url+'">Download</a>'+
+                                    '<form method="POST" action="'+url+'"><input type="hidden" name="_token" value="{{ csrf_token() }}"><button class="inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50" type="submit">Create revision</button></form>'+
+                                    '</div>';
                             }
                             if (row.status === 'queued') {
                                 return '<span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-700"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Generating</span>';
                             }
-                            return '<span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">Retry unavailable</span>';
+                            return '<form method="POST" action="'+row.retry_url+'"><input type="hidden" name="_token" value="{{ csrf_token() }}"><button class="inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50" type="submit">Retry PDF</button></form>';
                         }}
                     ],
                     createdRow: function (row, data) {

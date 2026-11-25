@@ -62,10 +62,11 @@ and reliable asynchronous creation of each tenant's isolated database.
    status, and append offline payment references to admin notes.
 2. Preserve useful audit history for subscription changes using the repository's
    existing conventions; at minimum retain notes and timestamps.
-3. Enforce the specified usage limits at the operation that consumes the resource:
-   - Starter: 2 active users, 5 active valve models, 100 generated PDFs per month.
-   - Growth: 8 active users, unlimited models and PDFs.
-   - Pro: 20 active users, unlimited models and PDFs.
+3. Store usage limits as per-tenant tenant-data values managed by Super Admin:
+   - active users, active valve models, and monthly generated datasheets.
+   - A blank limit means unlimited; plan names no longer determine limits by hardcoded
+     code.
+   - Enforce the effective per-tenant limit at the operation that consumes the resource.
 4. Return a clear limit-reached response and ensure failed operations do not partially
    create records.
 
@@ -154,10 +155,9 @@ verification.
   message, then retry after correcting the cause.
 - Renew and suspend tenants; confirm subscription end dates, timestamped payment
   notes, and Phase 1 tenant-access gating behave as expected.
-- Verify Starter rejects a third active user, Growth rejects a ninth, and Pro
-  rejects a twenty-first; verify Starter also rejects a sixth active valve model
-  and the 101st monthly PDF. Confirm Growth and Pro model/PDF quotas remain
-  unlimited.
+- Set tenant limits explicitly in Super Admin and verify active-user, active-model,
+  and monthly-PDF boundaries. Confirm zero/blank values behave as configured
+  (zero blocks creation; blank means unlimited).
 - Confirm each tenant database and private file directory is isolated from other
   tenants.
 

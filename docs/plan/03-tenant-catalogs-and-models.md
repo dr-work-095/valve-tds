@@ -56,7 +56,8 @@ valve-model master data, with private media and strict role/tenant isolation.
 4. Validate and normalize custom key/value attributes on the server; do not trust
    the client-generated rows.
 5. Add schematic upload and live preview using the private media route.
-6. Enforce the starter plan's maximum of five active models on creation/reactivation.
+6. Enforce the Super Admin-configured active-model limit on creation/reactivation;
+   a blank limit is unlimited.
 7. Define deletion behavior so referenced models cannot break datasheets; prefer
    deactivation when historical records depend on the model.
 
@@ -100,14 +101,14 @@ The Phase 3 tenant catalog implementation is complete for the current MVP surfac
 - Materials provide tenant-scoped create/edit flows, allowlisted DataTables
   search/sort/filter inputs, and unique-in-tenant code validation.
 - Valve models provide tenant-scoped create/edit/list flows, datalist suggestions,
-  private schematic uploads, custom JSON attributes, and starter quota checks.
+  private schematic uploads, custom JSON attributes, and per-tenant quota checks.
 - Sales users receive `403` from settings, materials, and valve-model
   administration routes through `EnsureTenantAdmin`.
 - Media requests are restricted to `logos` and `schematics`, remain under the
   initialized tenant UID directory, and return private/no-store responses.
 
 The focused Phase 3 suite passes in SQLite, including tenant-admin role checks,
-company settings persistence, material CRUD/uniqueness, starter model quotas,
+company settings persistence, material CRUD/uniqueness, dynamic model quotas,
 private schematic storage, traversal rejection, and cross-tenant media isolation.
 
 After deploying a new tenant migration, run it for existing tenants:
@@ -124,8 +125,8 @@ php artisan tenants:migrate --force --no-interaction
   administration routes.
 - Verify material code uniqueness, category/status filtering, sorting, pagination,
   and inactive material behavior.
-- Verify a Starter tenant cannot create or reactivate a sixth active valve model;
-  confirm Growth and Pro remain unlimited for this quota.
+- Verify the configured active-model limit blocks creation/reactivation and a blank
+  limit remains unlimited.
 - Upload invalid logo/schematic file types and oversized files; confirm validation
   fails without partial database or file writes.
 - Verify uploaded media loads through the authenticated media route and cannot be

@@ -85,3 +85,43 @@ behavior.
 - Redis queue routing, worker configuration, failure/retry handling.
 - Secure PDF download endpoint and status-aware listing actions.
 - Nightly expiry scheduler and focused tests.
+
+## Implementation status
+
+Phase 6 is implemented for the current MVP surface:
+
+- Datasheet creation dispatches `GenerateDatasheetPdfJob` to the `high` queue.
+- The job re-establishes tenant context, renders only the persisted snapshot, writes
+  to the tenant-private datasheets directory, and marks records generated or failed.
+- `spatie/browsershot` and Puppeteer are installed; Chrome is configurable through
+  `CHROME_PATH`.
+- Job retries use 3 attempts with a 60-second timeout and are queued with backoff.
+- Generated datasheets expose secure tenant-owned downloads; failed datasheets expose
+  retry actions; queued datasheets show Generating.
+- The listing uses the same search/DataTable/status/action conventions as existing
+  tenant catalog pages.
+- `app:expire-overdue-tenants` is registered and scheduled daily at 01:00 in bounded
+  `chunkById(100)` batches.
+
+### QA checklist
+
+- Create a datasheet and confirm a PDF job is dispatched to `high`.
+- Start a worker with `php artisan queue:work --queue=high,low --tries=3 --timeout=60`
+  and confirm the row changes from Queued/Generating to Generated.
+- Download a generated PDF and confirm it opens privately for only the owning tenant.
+- Attempt to download another tenant's datasheet or manipulate the PDF path and
+  confirm the request fails.
+- Force rendering failure, confirm the row becomes Failed, then retry and confirm
+  status returns to Queued followed by Generated.
+- Edit live company/model/material records after creation and confirm the PDF uses
+  the unchanged snapshot.
+- Verify A4/8 mm margins, Unicode text, optional logo/drawing, BOM ordering, overflow,
+  and multi-page behavior.
+- Run `php artisan app:expire-overdue-tenants` and confirm overdue trial/active tenants
+  expire while suspended tenants remain unchanged.
+- Run:
+
+```sh
+php artisan test --compact tests/Feature/TenantPdfTest.php tests/Feature/TenantConfiguratorTest.php
+php artisan schedule:list
+```
