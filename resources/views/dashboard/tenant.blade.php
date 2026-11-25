@@ -1,4 +1,5 @@
 <x-layouts.dashboard :page-title="'Dashboard'" :admin-mode="false" :tenant="$tenant" :user="$user">    
+    <div class="p-4 sm:p-6 lg:p-8">
 
     <section class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Workspace summary">
         <article class="rounded-lg border border-slate-200 bg-white p-4">
@@ -47,4 +48,5 @@
             @endforeach
         </div>
     </section>
+    </div>
 </x-layouts.dashboard>

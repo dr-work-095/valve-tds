@@ -1,4 +1,5 @@
 <x-layouts.dashboard :page-title="'Manage tenant'" :admin-mode="true" :tenant="null" :user="auth('admin')->user()">
+    <div class="p-4 sm:p-6 lg:p-8">
     <div class="mb-6">
         <a href="{{ route('admin.tenants.index') }}" class="text-sm font-medium text-blue-700 hover:text-blue-900">← Tenants</a>
         <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{{ $tenant->company_name }}</h1>
@@ -82,5 +83,6 @@
                 <pre class="mt-3 whitespace-pre-wrap break-words font-sans text-sm text-slate-600">{{ $tenant->admin_notes ?: 'No notes recorded.' }}</pre>
             </section>
         </div>
+    </div>
     </div>
 </x-layouts.dashboard>

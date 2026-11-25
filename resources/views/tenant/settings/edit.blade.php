@@ -1,5 +1,5 @@
 <x-layouts.dashboard :page-title="'Company settings'" :admin-mode="false" :tenant="$tenant" :user="$user">
-    
+    <div class="p-4 sm:p-6 lg:p-8">
     @if (session('status'))
         <div role="status" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div>
     @endif
@@ -40,4 +40,5 @@
         </div>
         <button type="submit" class="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Save settings</button>
     </form>
+    </div>
 </x-layouts.dashboard>

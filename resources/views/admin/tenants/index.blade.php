@@ -1,17 +1,20 @@
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css">
+@endpush
+
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
     <script>
         $(function () {
             const table = $('#tenantsTable').DataTable({
-                processing: true,
                 serverSide: true,
                 searching: true,
                 dom: 't<"dt-footer"ip>',
                 pagingType: 'simple_numbers',
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
-                scrollX: true,
+                autoWidth: false,
                 order: [[0, 'asc']],
                 ajax: {
                     url: @json(route('admin.tenants.data')),
@@ -42,8 +45,13 @@
                 language: { emptyTable: 'No tenants have been created yet.' }
             });
 
+            let searchTimeout;
             $('#tenantSearch').on('input', function () {
-                table.search(this.value).draw();
+                const searchValue = this.value;
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function () {
+                    table.search(searchValue).draw();
+                }, 300);
             });
             $('#tenantPlan, #tenantStatus').on('change', function () {
                 table.draw();
@@ -53,17 +61,6 @@
 @endpush
 
 <x-layouts.dashboard :page-title="'Tenants'" :admin-mode="true" :tenant="null" :user="auth('admin')->user()">
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-            <p class="text-sm font-medium text-blue-700">Administration</p>
-            <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Tenant management</h1>
-            <p class="mt-1 text-sm text-slate-500">Manage tenant subscriptions and database provisioning.</p>
-        </div>
-        <a href="{{ route('admin.tenants.create') }}" class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700">
-            Add tenant
-        </a>
-    </div>
-
     @if (session('status'))
         <div role="status" class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div>
     @endif
@@ -77,16 +74,22 @@
         </div>
     @endif
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-700/60 dark:bg-slate-800">
+    <section class="overflow-hidden dark:bg-slate-800">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-700/60 sm:px-6">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900 dark:text-white">All tenants</h2>
+                    <h2 class="text-base font-medium text-slate-900 dark:text-white">All tenants</h2>
                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Search and filter tenant records from the central database.</p>
                 </div>
-                <label class="sr-only" for="tenantSearch">Search tenants</label>
-                <input id="tenantSearch" type="search" placeholder="Search companies or IDs"
-                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 sm:max-w-xs">
+                <div class="flex items-center gap-3">
+                    <label class="sr-only" for="tenantSearch">Search tenants</label>
+                    <input id="tenantSearch" type="search" placeholder="Search tenants"
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 sm:w-64">
+                    <a href="{{ route('admin.tenants.create') }}" class="inline-flex shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:bg-blue-700">
+                        <i data-lucide="plus" class="mr-2 h-4 w-4" aria-hidden="true"></i>
+                        Add tenant
+                    </a>
+                </div>
             </div>
             <div class="flex flex-col gap-2 sm:flex-row">
                 <label class="sr-only" for="tenantPlan">Filter by plan</label>

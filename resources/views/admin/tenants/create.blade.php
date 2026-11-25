@@ -1,4 +1,5 @@
 <x-layouts.dashboard :page-title="'Add tenant'" :admin-mode="true" :tenant="null" :user="auth('admin')->user()">
+    <div class="p-4 sm:p-6 lg:p-8">
     <div class="mb-6">
         <a href="{{ route('admin.tenants.index') }}" class="text-sm font-medium text-blue-700 hover:text-blue-900">← Tenants</a>
         <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">Create tenant</h1>
@@ -87,4 +88,5 @@
             <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Create tenant</button>
         </div>
     </form>
+    </div>
 </x-layouts.dashboard>

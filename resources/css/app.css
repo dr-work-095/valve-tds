@@ -259,3 +259,130 @@ html.dark #materialsTable_wrapper .paginate_button.current:hover {
         align-items: center;
     }
 }
+
+/* Shared listing-table styling for Valve Models and Tenants */
+#valveModelsTable_wrapper table.dataTable,
+#tenantsTable_wrapper table.dataTable {
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+
+#valveModelsTable_wrapper table.dataTable thead th,
+#tenantsTable_wrapper table.dataTable thead th {
+    border-bottom: 1px solid rgb(241 245 249) !important;
+    background: rgb(248 250 252 / 70%) !important;
+    padding: 0.875rem 1rem !important;
+    color: rgb(100 116 139) !important;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+#valveModelsTable_wrapper table.dataTable tbody td,
+#tenantsTable_wrapper table.dataTable tbody td {
+    border-bottom: 1px solid rgb(241 245 249) !important;
+    padding: 0.875rem 1rem !important;
+    color: rgb(51 65 85) !important;
+    font-size: 0.875rem;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+#valveModelsTable_wrapper table.dataTable tbody tr:hover,
+#tenantsTable_wrapper table.dataTable tbody tr:hover {
+    background: rgb(248 250 252) !important;
+}
+
+#valveModelsTable_wrapper .dt-footer,
+#tenantsTable_wrapper .dt-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid rgb(241 245 249);
+    border-radius: 0 0 1rem 1rem;
+    background: white;
+    padding: 0.75rem 1rem;
+}
+
+#valveModelsTable_wrapper .dt-info,
+#tenantsTable_wrapper .dt-info {
+    color: rgb(100 116 139);
+    font-size: 0.75rem;
+}
+
+#valveModelsTable_wrapper .dt-paging nav,
+#tenantsTable_wrapper .dt-paging nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+#valveModelsTable_wrapper .dt-paging-button,
+#tenantsTable_wrapper .dt-paging-button,
+#valveModelsTable_wrapper .paginate_button,
+#tenantsTable_wrapper .paginate_button {
+    display: inline-flex !important;
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem !important;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(226 232 240) !important;
+    border-radius: 0.5rem !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: rgb(71 85 105) !important;
+    font-size: 0.75rem !important;
+    font-weight: 600;
+    text-decoration: none !important;
+}
+
+#valveModelsTable_wrapper .dt-paging-button.current,
+#tenantsTable_wrapper .dt-paging-button.current,
+#valveModelsTable_wrapper .paginate_button.current,
+#tenantsTable_wrapper .paginate_button.current {
+    border-color: rgb(37 99 235) !important;
+    background: rgb(37 99 235) !important;
+    color: white !important;
+}
+
+#valveModelsTable_wrapper .dt-paging-button.disabled,
+#tenantsTable_wrapper .dt-paging-button.disabled,
+#valveModelsTable_wrapper .paginate_button.disabled,
+#tenantsTable_wrapper .paginate_button.disabled {
+    border-color: rgb(241 245 249) !important;
+    background: rgb(248 250 252) !important;
+    color: rgb(148 163 184) !important;
+}
+
+html.dark #valveModelsTable_wrapper table.dataTable thead th,
+html.dark #tenantsTable_wrapper table.dataTable thead th {
+    border-bottom-color: rgb(51 65 85) !important;
+    background: rgb(15 23 42 / 40%) !important;
+    color: rgb(100 116 139);
+}
+
+html.dark #valveModelsTable_wrapper table.dataTable tbody td,
+html.dark #tenantsTable_wrapper table.dataTable tbody td {
+    border-bottom-color: rgb(51 65 85 / 50%) !important;
+    color: rgb(203 213 225);
+}
+
+html.dark #valveModelsTable_wrapper .dt-footer,
+html.dark #tenantsTable_wrapper .dt-footer {
+    border-color: rgb(51 65 85);
+    background: rgb(30 41 59);
+    color: rgb(203 213 225);
+}
+
+@media (max-width: 639px) {
+    #valveModelsTable_wrapper .dt-footer,
+    #tenantsTable_wrapper .dt-footer {
+        flex-direction: column;
+        align-items: center;
+    }
+}

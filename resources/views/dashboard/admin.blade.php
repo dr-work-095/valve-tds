@@ -1,4 +1,5 @@
 <x-layouts.dashboard :page-title="'Dashboard'" :admin-mode="true" :tenant="null" :user="$user">
+    <div class="p-4 sm:p-6 lg:p-8">
     <div class="mb-6">
         <p class="text-sm font-medium text-blue-700">Administration</p>
         <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Tenant overview</h1>
@@ -72,4 +73,5 @@
             </table>
         </div>
     </section>
+    </div>
 </x-layouts.dashboard>
