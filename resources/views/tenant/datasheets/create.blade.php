@@ -16,7 +16,7 @@
                 <label for="valve_model_id" class="mb-1 block text-sm font-medium text-slate-700">Valve model</label>
                 <select id="valve_model_id" name="valve_model_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">Select a ready model</option>
-                    @foreach ($models as $model)<option value="{{ $model->id }}" @selected((string) old('valve_model_id') === (string) $model->id)>{{ $model->name }} - {{ $model->category }}</option>@endforeach
+                    @foreach ($models as $model)<option value="{{ $model->id }}" @selected((string) old('valve_model_id') === (string) $model->id)>{{ $model->name }} - {{ $model->valve_category }} - {{ $model->valve_type }}</option>@endforeach
                 </select>
             </div>
             <div><label for="dimension_id" class="mb-1 block text-sm font-medium text-slate-700">Dimension combination</label><select id="dimension_id" name="dimension_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="">Select a valve model first</option></select>@error('dimension_id')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>

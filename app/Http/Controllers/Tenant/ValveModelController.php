@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\ValveCategory;
+use App\Enums\ValveType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreValveModelRequest;
 use App\Http\Requests\Tenant\UpdateValveModelRequest;
@@ -32,6 +34,8 @@ class ValveModelController extends Controller
         return view('tenant.valve-models.create', [
             'user' => Auth::guard('web')->user(),
             'tenant' => tenancy()->tenant,
+            'valveCategories' => ValveCategory::cases(),
+            'valveTypes' => ValveType::cases(),
         ]);
     }
 
@@ -84,6 +88,8 @@ class ValveModelController extends Controller
                 ->orderBy('part_number')
                 ->get(),
             'materials' => Material::where('is_active', true)->orderBy('code')->get(),
+            'valveCategories' => ValveCategory::cases(),
+            'valveTypes' => ValveType::cases(),
         ]);
     }
 

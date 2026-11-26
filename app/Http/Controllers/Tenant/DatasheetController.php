@@ -46,7 +46,7 @@ class DatasheetController extends Controller
     {
         $models = (new ValveModelReadiness)->selectableQuery()
             ->orderBy('name')
-            ->get(['id', 'name', 'category']);
+            ->get(['id', 'name', 'valve_category', 'valve_type']);
 
         return response()->json(['data' => $models]);
     }
@@ -56,7 +56,7 @@ class DatasheetController extends Controller
         $model = (new ValveModelReadiness)->selectableQuery()->findOrFail($valveModel);
 
         return response()->json([
-            'model' => $model->only(['id', 'name', 'category', 'design_standard', 'testing_standard']),
+            'model' => $model->only(['id', 'name', 'valve_category', 'valve_type', 'design_standard', 'testing_standard']),
             'dimensions' => $model->dimensions()->orderBy('size_inch')->orderBy('pressure_class')->get(),
             'bom' => $model->bomTemplates()->with('standardMaterial')->orderBy('part_number')->get(),
         ]);

@@ -49,10 +49,11 @@ valve-model master data, with private media and strict role/tenant isolation.
 ### 4. Valve models
 
 1. Add tenant-scoped model create/edit/list screens with server-side DataTables.
-2. Persist model name, category, design/testing/face-to-face/end-connection standards,
-   optional attributes, active state, and private schematic path.
-3. Use HTML autocomplete suggestions for repeated categories and engineering
-   standards while allowing legitimate custom values.
+2. Persist model name, valve category (function/role), valve type (mechanical
+   design), design/testing/face-to-face/end-connection standards, optional
+   attributes, active state, and private schematic path.
+3. Use controlled dropdown choices for valve categories and types, validated on
+   the server; keep both database columns as strings so the choice lists can evolve.
 4. Validate and normalize custom key/value attributes on the server; do not trust
    the client-generated rows.
 5. Add schematic upload and live preview using the private media route.
@@ -100,8 +101,9 @@ The Phase 3 tenant catalog implementation is complete for the current MVP surfac
   uploads, JSON default notes, and single-row `id=1` persistence.
 - Materials provide tenant-scoped create/edit flows, allowlisted DataTables
   search/sort/filter inputs, and unique-in-tenant code validation.
-- Valve models provide tenant-scoped create/edit/list flows, datalist suggestions,
-  private schematic uploads, custom JSON attributes, and per-tenant quota checks.
+- Valve models provide tenant-scoped create/edit/list flows, controlled function
+  category and mechanical type dropdowns, private schematic uploads, custom JSON
+  attributes, and per-tenant quota checks.
 - Sales users receive `403` from settings, materials, and valve-model
   administration routes through `EnsureTenantAdmin`.
 - Media requests are restricted to `logos` and `schematics`, remain under the
@@ -111,7 +113,10 @@ The focused Phase 3 suite passes in SQLite, including tenant-admin role checks,
 company settings persistence, material CRUD/uniqueness, dynamic model quotas,
 private schematic storage, traversal rejection, and cross-tenant media isolation.
 
-After deploying a new tenant migration, run it for existing tenants:
+Existing tenant databases can be updated without losing model classifications:
+the tenant migration renames `category` to `valve_type` and adds a blank
+`valve_category`. Assign a function category to each existing model before using
+it in a datasheet:
 
 ```sh
 php artisan tenants:migrate --force --no-interaction
@@ -133,13 +138,22 @@ php artisan tenants:migrate --force --no-interaction
   accessed through another tenant UID or a traversal path.
 - Confirm custom model attributes are normalized and cannot be used to inject
   arbitrary or nested server values.
-- Edit a valve model without changing its name/category and confirm it saves.
-  Confirm renaming to another existing name in the same category is rejected.
+- Edit a valve model without changing its name/type and confirm it saves.
+  Confirm renaming to another existing name in the same type is rejected.
+- Confirm the dropdowns contain the approved values:
+  Valve Category: Manual Isolation, Automated On/Off, Control / Modulating,
+  Check / Non-Return, and Safety / Pressure Relief; Valve Type: Ball, Globe,
+  Gate, Butterfly, Plug, Needle, Diaphragm, and Check.
+- Confirm Valve Category and Valve Type render as dropdowns and reject values
+  outside their predefined choices.
+- Run the tenant migration against existing model records and confirm their
+  mechanical type values are preserved while datasheet selection waits for a
+  function category.
 - Verify tenant databases remain isolated and the Super Admin central routes never
   initialize tenant context.
 
 Run the focused coverage with:
 
 ```sh
-php artisan test --compact tests/Feature/TenantCatalogTest.php tests/Feature/TenantMediaTest.php
+php artisan test --compact tests/Feature/TenantCatalogTest.php tests/Feature/TenantConfiguratorTest.php tests/Feature/TenantMediaTest.php
 ```

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Enums\ValveCategory;
+use App\Enums\ValveType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,10 +22,11 @@ class UpdateValveModelRequest extends FormRequest
                 'string',
                 'max:255',
                 Rule::unique('tenant.valve_models', 'name')
-                    ->where(fn ($query) => $query->where('category', $this->input('category')))
+                    ->where(fn ($query) => $query->where('valve_type', $this->input('valve_type')))
                     ->ignore($this->route('valveModel')),
             ],
-            'category' => ['required', 'string', 'max:100'],
+            'valve_category' => ['required', Rule::enum(ValveCategory::class)],
+            'valve_type' => ['required', Rule::enum(ValveType::class)],
             'design_standard' => ['required', 'string', 'max:255'],
             'testing_standard' => ['required', 'string', 'max:255'],
             'face_to_face_standard' => ['nullable', 'string', 'max:255'],

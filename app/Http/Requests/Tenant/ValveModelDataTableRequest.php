@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Enums\ValveCategory;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,9 +21,9 @@ class ValveModelDataTableRequest extends FormRequest
             'length' => ['sometimes', 'integer', Rule::in([10, 25, 50, 100])],
             'search' => ['sometimes', 'array'],
             'search.value' => ['nullable', 'string', 'max:100'],
-            'category' => ['nullable', 'string', 'max:100'],
+            'valve_category' => ['nullable', Rule::enum(ValveCategory::class)],
             'order' => ['sometimes', 'array'],
-            'order.0.column' => ['nullable', 'integer', Rule::in([0, 1, 2, 3, 4])],
+            'order.0.column' => ['nullable', 'integer', Rule::in([0, 1, 2, 3, 4, 5])],
             'order.0.dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ];
     }

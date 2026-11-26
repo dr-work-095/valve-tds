@@ -13,6 +13,12 @@ class ValveModelReadiness
         if (! $model->is_active) {
             $missing[] = 'The valve model is inactive.';
         }
+        if (! $model->valve_category) {
+            $missing[] = 'A valve category is required.';
+        }
+        if (! $model->valve_type) {
+            $missing[] = 'A valve type is required.';
+        }
         if (! $model->dimensions()->exists()) {
             $missing[] = 'At least one dimension row is required.';
         }
@@ -41,6 +47,8 @@ class ValveModelReadiness
     {
         return ValveModel::query()
             ->where('is_active', true)
+            ->whereNotNull('valve_category')
+            ->whereNotNull('valve_type')
             ->whereHas('dimensions')
             ->whereHas('bomTemplates');
     }

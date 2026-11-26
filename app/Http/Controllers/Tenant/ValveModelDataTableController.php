@@ -10,7 +10,14 @@ use Illuminate\Http\JsonResponse;
 
 class ValveModelDataTableController extends Controller
 {
-    private const COLUMNS = [0 => 'name', 1 => 'category', 2 => 'design_standard', 3 => 'testing_standard', 4 => 'is_active'];
+    private const COLUMNS = [
+        0 => 'name',
+        1 => 'valve_category',
+        2 => 'valve_type',
+        3 => 'design_standard',
+        4 => 'testing_standard',
+        5 => 'is_active',
+    ];
 
     public function __invoke(ValveModelDataTableRequest $request, ValveModelReadiness $readiness): JsonResponse
     {
@@ -22,13 +29,14 @@ class ValveModelDataTableController extends Controller
         if ($search !== '') {
             $query->where(function ($query) use ($search): void {
                 $query->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('category', 'like', '%'.$search.'%')
+                    ->orWhere('valve_category', 'like', '%'.$search.'%')
+                    ->orWhere('valve_type', 'like', '%'.$search.'%')
                     ->orWhere('design_standard', 'like', '%'.$search.'%')
                     ->orWhere('testing_standard', 'like', '%'.$search.'%');
             });
         }
-        if (isset($validated['category'])) {
-            $query->where('category', $validated['category']);
+        if (isset($validated['valve_category'])) {
+            $query->where('valve_category', $validated['valve_category']);
         }
 
         $recordsFiltered = (clone $query)->count();
@@ -47,7 +55,8 @@ class ValveModelDataTableController extends Controller
             'data' => $models->map(fn (ValveModel $model): array => [
                 'id' => $model->getKey(),
                 'name' => $model->name,
-                'category' => $model->category,
+                'valve_category' => $model->valve_category,
+                'valve_type' => $model->valve_type,
                 'design_standard' => $model->design_standard,
                 'testing_standard' => $model->testing_standard,
                 'is_active' => $model->is_active,

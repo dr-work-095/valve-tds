@@ -55,6 +55,9 @@
             <h2>Client / Project</h2>
             <p><strong>Client:</strong> {{ $snapshot['client_name'] }}</p>
             <p><strong>Project:</strong> {{ $snapshot['project_reference'] ?: '-' }}</p>
+            <h2>Valve Classification</h2>
+            <p>Category: {{ $snapshot['model']['valve_category'] ?? '-' }}</p>
+            <p>Type: {{ $snapshot['model']['valve_type'] ?? '-' }}</p>
             <h2>Standards</h2>
             <p>Design: {{ $snapshot['model']['design_standard'] ?: '-' }}</p>
             <p>Testing: {{ $snapshot['model']['testing_standard'] ?: '-' }}</p>

@@ -2,7 +2,26 @@
 @csrf
 <div class="grid gap-4 sm:grid-cols-2">
     <div><label for="name" class="mb-1 block text-sm font-medium text-slate-700">Model name</label><input id="name" name="name" value="{{ old('name', $valveModel->name ?? '') }}" required maxlength="255" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">@error('name')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
-    <div><label for="category" class="mb-1 block text-sm font-medium text-slate-700">Category</label><input id="category" name="category" list="valve-categories" value="{{ old('category', $valveModel->category ?? '') }}" required maxlength="100" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><datalist id="valve-categories"><option value="Gate"><option value="Globe"><option value="Ball"><option value="Check"><option value="Butterfly"></datalist></div>
+    <div>
+        <label for="valve_category" class="mb-1 block text-sm font-medium text-slate-700">Valve Category</label>
+        <select id="valve_category" name="valve_category" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <option value="">Select a valve category</option>
+            @foreach ($valveCategories as $category)
+                <option value="{{ $category->value }}" @selected(old('valve_category', $valveModel->valve_category ?? '') === $category->value)>{{ $category->value }}</option>
+            @endforeach
+        </select>
+        @error('valve_category')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+    </div>
+    <div>
+        <label for="valve_type" class="mb-1 block text-sm font-medium text-slate-700">Valve Type</label>
+        <select id="valve_type" name="valve_type" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <option value="">Select a valve type</option>
+            @foreach ($valveTypes as $type)
+                <option value="{{ $type->value }}" @selected(old('valve_type', $valveModel->valve_type ?? '') === $type->value)>{{ $type->value }}</option>
+            @endforeach
+        </select>
+        @error('valve_type')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+    </div>
     <div><label for="design_standard" class="mb-1 block text-sm font-medium text-slate-700">Design standard</label><input id="design_standard" name="design_standard" list="design-standards" value="{{ old('design_standard', $valveModel->design_standard ?? '') }}" required maxlength="255" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><datalist id="design-standards"><option value="API 600"><option value="API 6D"><option value="BS 1414"></datalist></div>
     <div><label for="testing_standard" class="mb-1 block text-sm font-medium text-slate-700">Testing standard</label><input id="testing_standard" name="testing_standard" list="testing-standards" value="{{ old('testing_standard', $valveModel->testing_standard ?? '') }}" required maxlength="255" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><datalist id="testing-standards"><option value="API 598"><option value="EN 12266-1"></datalist></div>
     <div><label for="face_to_face_standard" class="mb-1 block text-sm font-medium text-slate-700">Face-to-face standard</label><input id="face_to_face_standard" name="face_to_face_standard" value="{{ old('face_to_face_standard', $valveModel->face_to_face_standard ?? '') }}" maxlength="255" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></div>

@@ -13,7 +13,8 @@ class ValveModel extends Model
 
     protected $fillable = [
         'name',
-        'category',
+        'valve_category',
+        'valve_type',
         'design_standard',
         'testing_standard',
         'face_to_face_standard',

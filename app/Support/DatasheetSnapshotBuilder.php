@@ -75,7 +75,8 @@ class DatasheetSnapshotBuilder
             'model' => [
                 'id' => $model->id,
                 'name' => $model->name,
-                'category' => $model->category,
+                'valve_category' => $model->valve_category,
+                'valve_type' => $model->valve_type,
                 'design_standard' => $model->design_standard,
                 'testing_standard' => $model->testing_standard,
                 'face_to_face_standard' => $model->face_to_face_standard,

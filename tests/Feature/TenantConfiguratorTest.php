@@ -101,6 +101,8 @@ class TenantConfiguratorTest extends TestCase
         $original = GeneratedDatasheet::firstOrFail();
         $original->update(['status' => 'generated']);
         $snapshot = $original->selected_specs;
+        $this->assertSame('Manual Isolation', $snapshot['model']['valve_category']);
+        $this->assertSame('Gate', $snapshot['model']['valve_type']);
         $model->update(['name' => 'Renamed Model']);
         $bom->update(['part_name' => 'Renamed Part']);
         tenancy()->end();
@@ -126,7 +128,8 @@ class TenantConfiguratorTest extends TestCase
         tenancy()->initialize($tenant);
         $otherModel = ValveModel::create([
             'name' => 'Other Model',
-            'category' => 'Globe',
+            'valve_category' => 'Control / Modulating',
+            'valve_type' => 'Globe',
             'design_standard' => 'BS 1414',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -210,7 +213,8 @@ class TenantConfiguratorTest extends TestCase
         tenancy()->initialize($tenant);
         $model = ValveModel::create([
             'name' => 'Gate Ready',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => true,

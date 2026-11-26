@@ -131,14 +131,15 @@ class TenantCatalogTest extends TestCase
         tenancy()->end();
     }
 
-    public function test_valve_model_can_be_edited_when_name_and_category_are_unchanged(): void
+    public function test_valve_model_can_be_edited_when_name_and_type_are_unchanged(): void
     {
         [$tenant, $admin] = $this->createTenantUser('admin');
         $this->prepareTenantDatabase($tenant);
         tenancy()->initialize($tenant);
         $model = ValveModel::create([
             'name' => 'Gate Valve',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -147,7 +148,8 @@ class TenantCatalogTest extends TestCase
 
         $this->actingAs($admin, 'web')->put(route('tenant.valve-models.update', $model), [
             'name' => 'Gate Valve',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'face_to_face_standard' => 'ASME B16.10',
@@ -161,21 +163,23 @@ class TenantCatalogTest extends TestCase
         tenancy()->end();
     }
 
-    public function test_valve_model_rejects_an_existing_name_in_the_same_category(): void
+    public function test_valve_model_rejects_an_existing_name_in_the_same_type(): void
     {
         [$tenant, $admin] = $this->createTenantUser('admin');
         $this->prepareTenantDatabase($tenant);
         tenancy()->initialize($tenant);
         ValveModel::create([
             'name' => 'Existing Gate',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => true,
         ]);
         $model = ValveModel::create([
             'name' => 'My Gate',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -184,11 +188,70 @@ class TenantCatalogTest extends TestCase
 
         $this->actingAs($admin, 'web')->put(route('tenant.valve-models.update', $model), [
             'name' => 'Existing Gate',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => 1,
         ])->assertSessionHasErrors('name');
+    }
+
+    public function test_valve_model_rejects_classifications_outside_the_predefined_options(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+
+        $this->actingAs($admin, 'web')->post(route('tenant.valve-models.store'), [
+            'name' => 'Custom Valve',
+            'valve_category' => 'Custom Function',
+            'valve_type' => 'Custom Design',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => 1,
+        ])->assertSessionHasErrors(['valve_category', 'valve_type']);
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, ValveModel::count());
+        tenancy()->end();
+    }
+
+    public function test_tenant_migration_preserves_existing_model_category_as_type(): void
+    {
+        [$tenant] = $this->createTenantUser('admin');
+        $databasePath = database_path($tenant->database()->getName());
+        $this->tenantDatabaseFiles[] = $databasePath;
+        file_put_contents($databasePath, '');
+
+        tenancy()->initialize($tenant);
+        Artisan::call('migrate', [
+            '--database' => 'tenant',
+            '--path' => database_path('migrations/tenant/2026_11_24_115000_create_valve_models_table.php'),
+            '--realpath' => true,
+            '--force' => true,
+            '--no-interaction' => true,
+        ]);
+        DB::connection('tenant')->table('valve_models')->insert([
+            'name' => 'Legacy Globe',
+            'category' => 'Globe',
+            'design_standard' => 'BS 1414',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Artisan::call('migrate', [
+            '--database' => 'tenant',
+            '--path' => database_path('migrations/tenant/2026_11_26_052611_rename_valve_model_category_to_type.php'),
+            '--realpath' => true,
+            '--force' => true,
+            '--no-interaction' => true,
+        ]);
+
+        $model = ValveModel::where('name', 'Legacy Globe')->firstOrFail();
+        $this->assertSame('Globe', $model->valve_type);
+        $this->assertNull($model->valve_category);
+        tenancy()->end();
     }
 
     public function test_starter_tenant_cannot_create_a_sixth_active_valve_model(): void
@@ -207,7 +270,8 @@ class TenantCatalogTest extends TestCase
             tenancy()->initialize($tenant);
             ValveModel::create([
                 'name' => 'Model '.$number,
-                'category' => 'Gate',
+                'valve_category' => 'Manual Isolation',
+                'valve_type' => 'Gate',
                 'design_standard' => 'API 600',
                 'testing_standard' => 'API 598',
                 'is_active' => true,
@@ -217,7 +281,8 @@ class TenantCatalogTest extends TestCase
 
         $this->actingAs($admin, 'web')->post(route('tenant.valve-models.store'), [
             'name' => 'Model 6',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => 1,
@@ -237,7 +302,8 @@ class TenantCatalogTest extends TestCase
 
         $this->actingAs($admin, 'web')->post(route('tenant.valve-models.store'), [
             'name' => 'Gate Valve',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => 1,
@@ -258,7 +324,8 @@ class TenantCatalogTest extends TestCase
         tenancy()->initialize($tenant);
         $model = ValveModel::create([
             'name' => 'Gate 2',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -305,7 +372,8 @@ class TenantCatalogTest extends TestCase
         tenancy()->initialize($tenant);
         $model = ValveModel::create([
             'name' => 'Ball 1',
-            'category' => 'Ball',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Ball',
             'design_standard' => 'API 6D',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -338,7 +406,8 @@ class TenantCatalogTest extends TestCase
         tenancy()->initialize($tenant);
         $model = ValveModel::create([
             'name' => 'Globe 1',
-            'category' => 'Globe',
+            'valve_category' => 'Control / Modulating',
+            'valve_type' => 'Globe',
             'design_standard' => 'BS 1414',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -390,7 +459,8 @@ class TenantCatalogTest extends TestCase
         tenancy()->initialize($tenant);
         $model = ValveModel::create([
             'name' => 'Check 1',
-            'category' => 'Check',
+            'valve_category' => 'Check / Non-Return',
+            'valve_type' => 'Check',
             'design_standard' => 'API 6D',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -419,6 +489,10 @@ class TenantCatalogTest extends TestCase
 
         $this->assertTrue($readiness->isReady($model));
         $this->assertTrue(app(ValveModelReadiness::class)->selectableQuery()->whereKey($model->id)->exists());
+
+        $model->update(['valve_category' => null]);
+        $this->assertContains('A valve category is required.', $readiness->missingRequirements($model->fresh()));
+        $this->assertFalse($readiness->selectableQuery()->whereKey($model->id)->exists());
         tenancy()->end();
     }
 
@@ -429,7 +503,8 @@ class TenantCatalogTest extends TestCase
         tenancy()->initialize($tenant);
         $model = ValveModel::create([
             'name' => 'Tabbed Gate',
-            'category' => 'Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
             'design_standard' => 'API 600',
             'testing_standard' => 'API 598',
             'is_active' => true,
@@ -441,6 +516,10 @@ class TenantCatalogTest extends TestCase
             ->assertOk()
             ->assertSee('data-tab="dimensions"', false)
             ->assertSee('data-tab="bom"', false)
+            ->assertSee('Valve Category')
+            ->assertSee('Valve Type')
+            ->assertSee('Manual Isolation')
+            ->assertSee('Diaphragm')
             ->assertSee('id="dimension-modal"', false)
             ->assertSee('id="bom-modal"', false);
     }

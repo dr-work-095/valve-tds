@@ -18,7 +18,7 @@
         </div>
         <div class="overflow-x-auto">
             <table id="valveModelsTable" class="w-full text-left text-sm">
-                <thead><tr><th class="px-6">Name</th><th class="px-6">Category</th><th class="px-6">Design standard</th><th class="px-6">Testing standard</th><th class="px-6">Status</th><th class="px-6">Actions</th></tr></thead>
+                <thead><tr><th class="px-6">Name</th><th class="px-6">Valve Category</th><th class="px-6">Valve Type</th><th class="px-6">Design standard</th><th class="px-6">Testing standard</th><th class="px-6">Status</th><th class="px-6">Actions</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -37,12 +37,12 @@
                     pagingType:'simple_numbers',
                     ajax: @json(route('tenant.valve-models.data')),
                     columns:[
-                        {data:'name'}, {data:'category'}, {data:'design_standard'}, {data:'testing_standard'},
+                        {data:'name'}, {data:'valve_category'}, {data:'valve_type'}, {data:'design_standard'}, {data:'testing_standard'},
                         {data:'is_active', orderable:false},
                         {data:'edit_url', orderable:false}
                     ],
                     createdRow: function (row, data) {
-                        const status = row.querySelectorAll('td')[4];
+                        const status = row.querySelectorAll('td')[5];
                         status.innerHTML = '';
                         const badge = document.createElement('span');
                         badge.className = data.is_active
@@ -51,7 +51,7 @@
                         badge.textContent = data.is_active ? 'Active' : 'Inactive';
                         status.appendChild(badge);
 
-                        const action = row.querySelectorAll('td')[5];
+                        const action = row.querySelectorAll('td')[6];
                         action.innerHTML = '';
                         const link = document.createElement('a');
                         link.className = 'inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800';
