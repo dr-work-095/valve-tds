@@ -19,12 +19,14 @@ behavior.
 ### 1. PDF template
 
 1. Create a print-only Blade view driven exclusively by the persisted snapshot.
-2. Implement A4 portrait layout with 8 mm margins.
-3. Include company letterhead/logo, document number/revision, client/project data,
-   side-by-side schematic and ordered BOM, standards, dimensions, notes, and
-   sign-off/footer.
-4. Handle absent optional logo, drawing, dimensions, and notes without broken layout
-   or external network access.
+2. Implement the two-page A4 portrait engineering datasheet layout with the
+   template's 12/13/17/13 mm top/right/bottom/left margins.
+3. Include company letterhead/logo, document number/revision, identification and
+   project data, operating conditions, model/dimension construction details, ordered
+   BOM, control performance when applicable, actuation, compliance, revision
+   sign-off, and footer.
+4. Handle an absent logo and blank optional engineering values without broken
+   layout or external network access.
 5. Add visual/fixture checks for page size, overflow, Unicode/engineering text, image
    sizing, and multi-page behavior.
 
@@ -93,6 +95,9 @@ Phase 6 is implemented for the current MVP surface:
 - Datasheet creation dispatches `GenerateDatasheetPdfJob` to the `high` queue.
 - The job re-establishes tenant context, renders only the persisted snapshot, writes
   to the tenant-private datasheets directory, and marks records generated or failed.
+- Sections A–G follow the supplied [industrial datasheet reference](../industrial-valve-datasheet.html),
+  with project engineering values read exclusively from the immutable snapshot;
+  control-performance data is displayed only for Control / Modulating models.
 - `spatie/browsershot` and Puppeteer are installed; Chrome is configurable through
   `CHROME_PATH`.
 - Job retries use 3 attempts with a 60-second timeout and are queued with backoff.
@@ -100,11 +105,22 @@ Phase 6 is implemented for the current MVP surface:
   retry actions; queued datasheets show Generating.
 - The listing uses the same search/DataTable/status/action conventions as existing
   tenant catalog pages.
+- An opt-in local/testing seeder automatically initializes the first tenant by ID
+  and creates an illustrative control-valve model, dimension, BOM, and complete
+  A–G datasheet; it does not run as part of normal tenant provisioning.
 - `app:expire-overdue-tenants` is registered and scheduled daily at 01:00 in bounded
   `chunkById(100)` batches.
 
 ### QA checklist
 
+- Run the sample seeder for the first local tenant:
+
+```sh
+php artisan app:seed-sample-datasheet --no-interaction
+```
+
+- Rerun the sample seeder and confirm it does not duplicate the model, dimension,
+  BOM rows, datasheet, or PDF job.
 - Create a datasheet and confirm a PDF job is dispatched to `high`.
 - Start a worker with `php artisan queue:work --queue=high,low --tries=3 --timeout=60`
   and confirm the row changes from Queued/Generating to Generated.
@@ -115,8 +131,10 @@ Phase 6 is implemented for the current MVP surface:
   status returns to Queued followed by Generated.
 - Edit live company/model/material records after creation and confirm the PDF uses
   the unchanged snapshot.
-- Verify A4/8 mm margins, Unicode text, optional logo/drawing, BOM ordering, overflow,
-  and multi-page behavior.
+- Compare the generated two-page PDF with the supplied reference for section order,
+  grouped process metrics, table layout, and page labels.
+- Verify A4 page size and template margins, Unicode/engineering text, optional logo,
+  blank optional values, BOM ordering, overflow, and multi-page behavior.
 - Run `php artisan app:expire-overdue-tenants` and confirm overdue trial/active tenants
   expire while suspended tenants remain unchanged.
 - Run:

@@ -31,7 +31,7 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead><tr><th class="px-3 py-2">Size</th><th class="px-3 py-2">DN</th><th class="px-3 py-2">Class</th><th class="px-3 py-2">End connection</th><th class="px-3 py-2">Face-to-face</th><th class="px-3 py-2">Weight</th><th class="px-3 py-2">Actions</th></tr></thead>
+                    <thead><tr><th class="px-3 py-2">Size</th><th class="px-3 py-2">DN</th><th class="px-3 py-2">Class</th><th class="px-3 py-2">End connection</th><th class="px-3 py-2">Face-to-face</th><th class="px-3 py-2">End-to-end</th><th class="px-3 py-2">Flange OD</th><th class="px-3 py-2">Center-to-top</th><th class="px-3 py-2">Weight</th><th class="px-3 py-2">Actions</th></tr></thead>
                     <tbody>
                         @forelse ($dimensions as $dimension)
                             <tr class="border-t border-slate-100">
@@ -40,6 +40,9 @@
                                 <td class="px-3 py-3">{{ $dimension->pressure_class }}</td>
                                 <td class="px-3 py-3">{{ $dimension->end_connection }}</td>
                                 <td class="px-3 py-3">{{ $dimension->face_to_face_mm !== null ? number_format((float) $dimension->face_to_face_mm, 2).' mm' : '-' }}</td>
+                                <td class="px-3 py-3">{{ $dimension->end_to_end_mm !== null ? number_format((float) $dimension->end_to_end_mm, 2).' mm' : '-' }}</td>
+                                <td class="px-3 py-3">{{ $dimension->flange_od_mm !== null ? number_format((float) $dimension->flange_od_mm, 2).' mm' : '-' }}</td>
+                                <td class="px-3 py-3">{{ $dimension->center_to_top_mm !== null ? number_format((float) $dimension->center_to_top_mm, 2).' mm' : '-' }}</td>
                                 <td class="px-3 py-3">{{ $dimension->weight_kg !== null ? number_format((float) $dimension->weight_kg, 2).' kg' : '-' }}</td>
                                 <td class="px-3 py-3">
                                     <form method="POST" action="{{ route('tenant.valve-models.dimensions.destroy', [$valveModel, $dimension]) }}">
@@ -49,7 +52,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-3 py-6 text-center text-slate-500">No dimensions configured.</td></tr>
+                            <tr><td colspan="10" class="px-3 py-6 text-center text-slate-500">No dimensions configured.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -62,13 +65,16 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead><tr><th class="px-3 py-2">Part</th><th class="px-3 py-2">Name</th><th class="px-3 py-2">Standard material</th><th class="px-3 py-2">Actions</th></tr></thead>
+                    <thead><tr><th class="px-3 py-2">Part</th><th class="px-3 py-2">Component group</th><th class="px-3 py-2">Name</th><th class="px-3 py-2">Qty / unit</th><th class="px-3 py-2">Standard material</th><th class="px-3 py-2">Notes</th><th class="px-3 py-2">Actions</th></tr></thead>
                     <tbody>
                         @forelse ($bomRows as $bom)
                             <tr class="border-t border-slate-100">
                                 <td class="px-3 py-3">{{ $bom->part_number }}</td>
+                                <td class="px-3 py-3">{{ $bom->component_group ?: '-' }}</td>
                                 <td class="px-3 py-3">{{ $bom->part_name }}</td>
+                                <td class="px-3 py-3">{{ rtrim(rtrim(number_format((float) $bom->quantity_per_valve, 3), '0'), '.') }} {{ $bom->unit }}</td>
                                 <td class="px-3 py-3">{{ $bom->standardMaterial?->code ?: '-' }}</td>
+                                <td class="px-3 py-3">{{ $bom->notes ?: '-' }}</td>
                                 <td class="px-3 py-3">
                                     <form method="POST" action="{{ route('tenant.valve-models.bom.destroy', [$valveModel, $bom]) }}">
                                         @csrf @method('DELETE')
@@ -77,12 +83,12 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="px-3 py-6 text-center text-slate-500">No BOM rows configured.</td></tr>
+                            <tr><td colspan="7" class="px-3 py-6 text-center text-slate-500">No BOM rows configured.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    @include('tenant.valve-models.modals', ['valveModel' => $valveModel, 'materials' => $materials])
+    @include('tenant.valve-models.modals', ['valveModel' => $valveModel, 'materials' => $materials, 'componentGroups' => $componentGroups])
 </x-layouts.dashboard>

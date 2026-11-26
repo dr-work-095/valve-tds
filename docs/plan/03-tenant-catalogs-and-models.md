@@ -50,8 +50,10 @@ valve-model master data, with private media and strict role/tenant isolation.
 
 1. Add tenant-scoped model create/edit/list screens with server-side DataTables.
 2. Persist model name, valve category (function/role), valve type (mechanical
-   design), design/testing/face-to-face/end-connection standards, optional
-   attributes, active state, and private schematic path.
+   design), design/testing/face-to-face/end-connection standards, reusable
+   construction defaults (flange facing/finish, bonnet/cover, bore/port, flow
+   characteristic, and default seat leakage class), optional attributes, active
+   state, and private schematic path.
 3. Use controlled dropdown choices for valve categories and types, validated on
    the server; keep both database columns as strings so the choice lists can evolve.
 4. Validate and normalize custom key/value attributes on the server; do not trust
@@ -103,7 +105,7 @@ The Phase 3 tenant catalog implementation is complete for the current MVP surfac
   search/sort/filter inputs, and unique-in-tenant code validation.
 - Valve models provide tenant-scoped create/edit/list flows, controlled function
   category and mechanical type dropdowns, private schematic uploads, custom JSON
-  attributes, and per-tenant quota checks.
+  attributes, reusable construction defaults, and per-tenant quota checks.
 - Sales users receive `403` from settings, materials, and valve-model
   administration routes through `EnsureTenantAdmin`.
 - Media requests are restricted to `logos` and `schematics`, remain under the
@@ -115,8 +117,10 @@ private schematic storage, traversal rejection, and cross-tenant media isolation
 
 Existing tenant databases can be updated without losing model classifications:
 the tenant migration renames `category` to `valve_type` and adds a blank
-`valve_category`. Assign a function category to each existing model before using
-it in a datasheet:
+`valve_category`. The additive catalog migration also adds reusable model
+construction defaults; existing model rows retain their current values and receive
+nullable construction fields. Existing BOM rows receive quantity `1` and unit `ea`.
+Assign a function category to each existing model before using it in a datasheet:
 
 ```sh
 php artisan tenants:migrate --force --no-interaction
@@ -146,9 +150,14 @@ php artisan tenants:migrate --force --no-interaction
   Gate, Butterfly, Plug, Needle, Diaphragm, and Check.
 - Confirm Valve Category and Valve Type render as dropdowns and reject values
   outside their predefined choices.
+- Edit reusable flange-facing/finish, bonnet/cover, bore/port, flow-characteristic,
+  and default seat-leakage values; confirm they persist on the valve model.
+- Confirm datasheet entry keeps project-specific line size and operating values,
+  while model construction defaults are sourced from the selected model.
 - Run the tenant migration against existing model records and confirm their
   mechanical type values are preserved while datasheet selection waits for a
-  function category.
+  function category; confirm new nullable construction fields do not erase existing
+  model data.
 - Verify tenant databases remain isolated and the Super Admin central routes never
   initialize tenant context.
 

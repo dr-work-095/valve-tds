@@ -56,6 +56,10 @@ class DatasheetSnapshotBuilder
             $bom[] = [
                 'part_number' => $bomTemplate->part_number,
                 'part_name' => $bomTemplate->part_name,
+                'component_group' => $bomTemplate->component_group,
+                'quantity_per_valve' => $bomTemplate->quantity_per_valve,
+                'unit' => $bomTemplate->unit,
+                'notes' => $bomTemplate->notes,
                 'material_code' => $material->code,
                 'material_name' => $material->name,
             ];
@@ -81,6 +85,11 @@ class DatasheetSnapshotBuilder
                 'testing_standard' => $model->testing_standard,
                 'face_to_face_standard' => $model->face_to_face_standard,
                 'end_connection_standard' => $model->end_connection_standard,
+                'flange_facing_finish' => $model->flange_facing_finish,
+                'bonnet_cover_type' => $model->bonnet_cover_type,
+                'bore_port_configuration' => $model->bore_port_configuration,
+                'flow_characteristic' => $model->flow_characteristic,
+                'seat_leakage_class' => $model->seat_leakage_class,
                 'custom_attributes' => $model->custom_attributes,
             ],
             'dimension' => [
@@ -100,6 +109,7 @@ class DatasheetSnapshotBuilder
             'client_name' => $input['client_name'],
             'project_reference' => $input['project_reference'] ?? null,
             'notes' => $input['notes'] ?? null,
+            'datasheet_fields' => $input['datasheet_fields'] ?? [],
         ];
     }
 }

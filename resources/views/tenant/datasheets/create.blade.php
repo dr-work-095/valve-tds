@@ -16,7 +16,7 @@
                 <label for="valve_model_id" class="mb-1 block text-sm font-medium text-slate-700">Valve model</label>
                 <select id="valve_model_id" name="valve_model_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">Select a ready model</option>
-                    @foreach ($models as $model)<option value="{{ $model->id }}" @selected((string) old('valve_model_id') === (string) $model->id)>{{ $model->name }} - {{ $model->valve_category }} - {{ $model->valve_type }}</option>@endforeach
+                    @foreach ($models as $model)<option value="{{ $model->id }}" data-valve-category="{{ $model->valve_category }}" @selected((string) old('valve_model_id') === (string) $model->id)>{{ $model->name }} - {{ $model->valve_category }} - {{ $model->valve_type }}</option>@endforeach
                 </select>
             </div>
             <div><label for="dimension_id" class="mb-1 block text-sm font-medium text-slate-700">Dimension combination</label><select id="dimension_id" name="dimension_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="">Select a valve model first</option></select>@error('dimension_id')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
@@ -24,7 +24,7 @@
                 <h2 class="mb-2 text-sm font-semibold text-slate-900">BOM materials</h2>
                 <div id="bom-materials" class="grid gap-3"></div>
             </div>
-            <div class="sm:col-span-2"><label for="notes" class="mb-1 block text-sm font-medium text-slate-700">Project notes</label><textarea id="notes" name="notes" rows="4" maxlength="5000" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('notes', implode("\n", (array) ($company?->default_notes ? json_decode($company->default_notes, true) : []))) }}</textarea></div>
+            @include('tenant.datasheets.fields')
             </div>
             <button type="submit" class="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Create datasheet</button>
         </form>
@@ -34,8 +34,19 @@
             const modelSelect = document.getElementById('valve_model_id');
             const dimensionSelect = document.getElementById('dimension_id');
             const bomContainer = document.getElementById('bom-materials');
+            const controlPerformanceFields = document.getElementById('control-performance-fields');
+
+            function updateControlPerformanceVisibility() {
+                const selectedCategory = modelSelect.selectedOptions[0]?.dataset.valveCategory;
+                const isModulating = selectedCategory === 'Control / Modulating';
+                controlPerformanceFields.classList.toggle('hidden', !isModulating);
+                controlPerformanceFields.querySelectorAll('input, select, textarea').forEach((field) => {
+                    field.disabled = !isModulating;
+                });
+            }
 
             async function loadModel() {
+                updateControlPerformanceVisibility();
                 dimensionSelect.innerHTML = '<option value="">Loading dimensions...</option>';
                 bomContainer.innerHTML = '';
                 if (!modelSelect.value) {
@@ -72,6 +83,9 @@
                 });
             }
             modelSelect.addEventListener('change', loadModel);
+            if (modelSelect.value) {
+                loadModel();
+            }
         </script>
     @endpush
 </x-layouts.dashboard>

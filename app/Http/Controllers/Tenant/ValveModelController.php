@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Enums\ValveCategory;
+use App\Enums\ValveComponentGroup;
 use App\Enums\ValveType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreValveModelRequest;
@@ -89,6 +90,7 @@ class ValveModelController extends Controller
                 ->get(),
             'materials' => Material::where('is_active', true)->orderBy('code')->get(),
             'valveCategories' => ValveCategory::cases(),
+            'componentGroups' => ValveComponentGroup::cases(),
             'valveTypes' => ValveType::cases(),
         ]);
     }

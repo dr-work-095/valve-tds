@@ -154,12 +154,117 @@ class TenantCatalogTest extends TestCase
             'testing_standard' => 'API 598',
             'face_to_face_standard' => 'ASME B16.10',
             'end_connection_standard' => 'ASME B16.5',
+            'flange_facing_finish' => 'Raised face, 125-250 AARH',
+            'bonnet_cover_type' => 'Bolted bonnet',
+            'bore_port_configuration' => 'Full bore',
+            'flow_characteristic' => 'Equal Percentage',
+            'seat_leakage_class' => 'ANSI Class V',
             'is_active' => 1,
         ])->assertRedirect(route('tenant.valve-models.index'));
 
         tenancy()->initialize($tenant);
         $this->assertSame('ASME B16.10', $model->fresh()->face_to_face_standard);
         $this->assertSame('ASME B16.5', $model->fresh()->end_connection_standard);
+        $this->assertSame('Raised face, 125-250 AARH', $model->fresh()->flange_facing_finish);
+        $this->assertSame('Bolted bonnet', $model->fresh()->bonnet_cover_type);
+        $this->assertSame('Full bore', $model->fresh()->bore_port_configuration);
+        $this->assertSame('Equal Percentage', $model->fresh()->flow_characteristic);
+        $this->assertSame('ANSI Class V', $model->fresh()->seat_leakage_class);
+        tenancy()->end();
+    }
+
+    public function test_bom_template_stores_component_group_quantity_unit_and_notes(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Component Detail Valve',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Ball',
+            'design_standard' => 'API 6D',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $material = Material::where('is_active', true)->firstOrFail();
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->post(route('tenant.valve-models.bom.store', $model), [
+            'part_number' => 1,
+            'part_name' => 'Body',
+            'component_group' => 'Body / Bonnet',
+            'quantity_per_valve' => '2.5',
+            'unit' => 'ea',
+            'notes' => 'Pressure-containing component',
+            'standard_material_id' => $material->id,
+        ])->assertRedirect(route('tenant.valve-models.edit', $model).'#bom');
+
+        tenancy()->initialize($tenant);
+        $bom = ValveBomTemplate::where('valve_model_id', $model->id)->firstOrFail();
+        $this->assertSame('Body / Bonnet', $bom->component_group);
+        $this->assertSame('2.500', $bom->quantity_per_valve);
+        $this->assertSame('ea', $bom->unit);
+        $this->assertSame('Pressure-containing component', $bom->notes);
+        tenancy()->end();
+    }
+
+    public function test_bom_template_rejects_invalid_component_group_and_nonpositive_quantity(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Invalid Component Detail Valve',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Ball',
+            'design_standard' => 'API 6D',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $material = Material::where('is_active', true)->firstOrFail();
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->post(route('tenant.valve-models.bom.store', $model), [
+            'part_number' => 1,
+            'part_name' => 'Stem',
+            'component_group' => 'Unknown group',
+            'quantity_per_valve' => 0,
+            'unit' => 'ea',
+            'standard_material_id' => $material->id,
+        ])->assertSessionHasErrors(['component_group', 'quantity_per_valve']);
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, ValveBomTemplate::where('valve_model_id', $model->id)->count());
+        tenancy()->end();
+    }
+
+    public function test_bom_template_rejects_quantity_above_database_precision(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Oversized Quantity Valve',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Ball',
+            'design_standard' => 'API 6D',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $material = Material::where('is_active', true)->firstOrFail();
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')->post(route('tenant.valve-models.bom.store', $model), [
+            'part_number' => 1,
+            'part_name' => 'Stem',
+            'component_group' => 'Stem / Shaft',
+            'quantity_per_valve' => '10000000',
+            'unit' => 'ea',
+            'standard_material_id' => $material->id,
+        ])->assertSessionHasErrors('quantity_per_valve');
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, ValveBomTemplate::where('valve_model_id', $model->id)->count());
         tenancy()->end();
     }
 
@@ -215,7 +320,7 @@ class TenantCatalogTest extends TestCase
         tenancy()->end();
     }
 
-    public function test_tenant_migration_preserves_existing_model_category_as_type(): void
+    public function test_tenant_migrations_preserve_existing_model_and_bom_records(): void
     {
         [$tenant] = $this->createTenantUser('admin');
         $databasePath = database_path($tenant->database()->getName());
@@ -248,9 +353,53 @@ class TenantCatalogTest extends TestCase
             '--no-interaction' => true,
         ]);
 
+        foreach ([
+            '2026_11_23_171707_create_materials_table.php',
+            '2026_11_25_063000_create_valve_dimensions_and_bom_templates.php',
+        ] as $migration) {
+            Artisan::call('migrate', [
+                '--database' => 'tenant',
+                '--path' => database_path('migrations/tenant/'.$migration),
+                '--realpath' => true,
+                '--force' => true,
+                '--no-interaction' => true,
+            ]);
+        }
+
+        $materialId = DB::connection('tenant')->table('materials')->insertGetId([
+            'code' => 'LEGACY-MATERIAL',
+            'name' => 'Legacy material',
+            'category' => 'Body/Bonnet',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $modelId = DB::connection('tenant')->table('valve_models')->where('name', 'Legacy Globe')->value('id');
+        DB::connection('tenant')->table('valve_bom_templates')->insert([
+            'valve_model_id' => $modelId,
+            'part_number' => 1,
+            'part_name' => 'Body',
+            'standard_material_id' => $materialId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Artisan::call('migrate', [
+            '--database' => 'tenant',
+            '--path' => database_path('migrations/tenant/2026_11_26_064500_add_reusable_construction_details_to_valve_models_and_bom_templates.php'),
+            '--realpath' => true,
+            '--force' => true,
+            '--no-interaction' => true,
+        ]);
+
         $model = ValveModel::where('name', 'Legacy Globe')->firstOrFail();
         $this->assertSame('Globe', $model->valve_type);
         $this->assertNull($model->valve_category);
+        $this->assertNull($model->flange_facing_finish);
+        $bom = ValveBomTemplate::where('valve_model_id', $model->id)->firstOrFail();
+        $this->assertNull($bom->component_group);
+        $this->assertSame('1.000', $bom->quantity_per_valve);
+        $this->assertSame('ea', $bom->unit);
         tenancy()->end();
     }
 
@@ -518,10 +667,17 @@ class TenantCatalogTest extends TestCase
             ->assertSee('data-tab="bom"', false)
             ->assertSee('Valve Category')
             ->assertSee('Valve Type')
+            ->assertSee('Reusable construction defaults')
+            ->assertSee('Flange facing & finish')
+            ->assertSee('Flow characteristic')
             ->assertSee('Manual Isolation')
             ->assertSee('Diaphragm')
             ->assertSee('id="dimension-modal"', false)
-            ->assertSee('id="bom-modal"', false);
+            ->assertSee('id="bom-modal"', false)
+            ->assertSee('Component group')
+            ->assertSee('Body / Bonnet')
+            ->assertSee('Quantity per valve')
+            ->assertSee('End-to-end');
     }
 
     private function createTenantUser(string $role): array

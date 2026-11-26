@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Industrial Valve Engineering Datasheet</title>
+<style>
+  /* Dompdf: A4 portrait, two deliberately separated pages */
+  @page { size: A4 portrait; margin: 12mm 13mm 17mm 13mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #202938;
+    font-size: 7.35pt;
+    line-height: 1.18;
+  }
+  .page { position: relative; width: 100%; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .doc-header {
+    width: 100%; border-collapse: collapse; table-layout: fixed;
+    margin: 0 0 5px 0;
+  }
+  .doc-header td {
+    border: 0.65px solid #344052; padding: 4px 6px; vertical-align: middle;
+  }
+  .brand { width: 55%; }
+  .meta { width: 45%; }
+  .brand-title { font-size: 12pt; font-weight: bold; letter-spacing: .25px; line-height: 1.35; }
+  .brand-sub { font-size: 7pt; color: #4b5563; margin-top: 1px; }
+  .meta-table { width: 100%; border-collapse: collapse; font-size: 7pt; }
+  .meta-table td { border: 0; padding: 2px 3px; }
+  .meta-table td:first-child { width: 43%; font-weight: bold; white-space: nowrap; }
+  table.data { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0 0 6px 0; }
+  table.data td, table.data th {
+    border: 0.55px solid #344052; padding: 3.1px 5px;
+    vertical-align: middle; overflow-wrap: break-word;
+  }
+  .section-title th {
+    background: #202b3d; color: #fff; text-align: left;
+    font-size: 8pt; font-weight: bold; letter-spacing: .15px;
+    padding: 4px 6px !important;
+  }
+  .label { font-weight: bold; color: #303b4c; background: #f7f8fa; }
+  .center { text-align: center; }
+  .right { text-align: right; }
+  .small { font-size: 6.9pt; }
+  .tight td { padding-top: 2.7px !important; padding-bottom: 2.7px !important; }
+  .subhead td { font-weight: bold; text-align: center; background: #f0f2f5; }
+  .span-value { text-align: left; }
+  .checks { line-height: 1.55; }
+  .revision { margin-top: 1px !important; }
+  .revision th { background: #f0f2f5; font-weight: bold; text-align: center; }
+  .footer {
+    position: fixed; bottom: -11mm; left: 0; right: 0;
+    height: 7mm; color: #778397; font-size: 6.8pt;
+  }
+  .footer .left { float: left; }
+  .footer .right { float: right; }
+  .page-number:after { content: counter(page); }
+  .muted { color: #5b6574; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<div class="page">
+  <table class="doc-header">
+    <tr>
+      <td class="brand">
+        <div class="brand-title">INDUSTRIAL VALVE ENGINEERING<br>DATASHEET</div>
+        <div class="brand-sub">Standard Specification Form (Isolation, Automated On/Off &amp; Control Valves)</div>
+      </td>
+      <td class="meta">
+        <table class="meta-table">
+          <tr><td>Document No.:</td><td>DS-VAL-204-A</td></tr>
+          <tr><td>Revision / Status:</td><td>Rev 0 — Issued for Inquiry</td></tr>
+          <tr><td>Date / Project Ref.:</td><td>2026-11-26 / PRJ-409-UNIT2</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <table class="data">
+    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+    <tr class="section-title"><th colspan="4">A. IDENTIFICATION &amp; GENERAL DATA</th></tr>
+    <tr><td class="label">Equipment Tag No.</td><td><b>FCV-204</b></td><td class="label">P&amp;ID Drawing No.</td><td>PID-409-02-014</td></tr>
+    <tr><td class="label">Service / Fluid Name</td><td>Boiler Feedwater Control</td><td class="label">Piping Line No. / Spec</td><td>4&quot;-BFW-204-C3A</td></tr>
+    <tr><td class="label">Valve Category</td><td>Control / Modulating</td><td class="label">Quantity Required</td><td>1 No.</td></tr>
+    <tr><td class="label">Valve Type / Pattern</td><td>Globe Valve, Cage-Guided</td><td class="label">Installation Location</td><td>Outdoor, Process Area B</td></tr>
+  </table>
+
+  <table class="data">
+    <colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+    <tr class="section-title"><th colspan="5">B. PROCESS &amp; OPERATING CONDITIONS</th></tr>
+    <tr class="subhead"><td>Parameter</td><td>Units</td><td>Minimum</td><td>Normal</td><td>Maximum</td></tr>
+    <tr><td class="label">Fluid Phase &amp; State</td><td class="center">—</td><td colspan="3">Liquid (Clean Demineralized Boiler Feedwater)</td></tr>
+    <tr><td class="label">Flow Rate (Volumetric<br>/ Mass)</td><td class="center">m<sup>3</sup>/h</td><td class="center">35.0</td><td class="center">85.0</td><td class="center">115.0</td></tr>
+    <tr><td class="label">Inlet Pressure (P<sub>1</sub>)</td><td class="center">bar(g)</td><td class="center">42.0</td><td class="center">40.5</td><td class="center">39.0</td></tr>
+    <tr><td class="label">Outlet Pressure (P<sub>2</sub>) /<br>Shut-off ΔP</td><td class="center">bar(g)</td><td class="center">32.0</td><td class="center">33.5</td><td class="center">34.0 (Shut-off: 45.0)</td></tr>
+    <tr><td class="label">Operating<br>Temperature (T<sub>1</sub>)</td><td class="center">°C</td><td class="center">110</td><td class="center">135</td><td class="center">145</td></tr>
+    <tr><td class="label">Density / Specific<br>Gravity / MW</td><td class="center">kg/m<sup>3</sup></td><td class="center">951</td><td class="center">930</td><td class="center">921</td></tr>
+    <tr><td class="label">Viscosity / Vapor<br>Pressure (P<sub>v</sub>)</td><td class="center">cP / bar(a)</td><td class="center">0.25 / 1.43</td><td class="center">0.20 / 3.13</td><td class="center">0.19 / 4.15</td></tr>
+    <tr><td class="label">Design Pressure /<br>Design Temp.</td><td class="center">bar(g) / °C</td><td colspan="3">50.0 bar(g) @ 180 °C</td></tr>
+  </table>
+
+  <table class="data">
+    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+    <tr class="section-title"><th colspan="4">C. VALVE BODY &amp; MECHANICAL CONSTRUCTION</th></tr>
+    <tr><td class="label">Nominal Valve Size (DN / NPS)</td><td>DN80 (3&quot;) Body / DN100 (4&quot;) Line</td><td class="label">End Connections</td><td>RF Flange (ASME B16.5)</td></tr>
+    <tr><td class="label">Pressure Class / Rating</td><td>ASME Class 300</td><td class="label">Flange Facing &amp; Finish</td><td>Raised Face, 125–250 AARH</td></tr>
+    <tr><td class="label">Design Standard (API / ASME)</td><td>ASME B16.34 / ISA S75.01</td><td class="label">Bonnet / Cover Type</td><td>Bolted Standard Bonnet</td></tr>
+    <tr><td class="label">Face-to-Face Standard</td><td>ISA S75.08.01</td><td class="label">Bore / Port Configuration</td><td>Reduced Port (Anti-Cavitation)</td></tr>
+  </table>
+
+  <table class="data">
+    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+    <tr class="section-title"><th colspan="4">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
+    <tr><td class="label">Body &amp; Bonnet</td><td>ASTM A216 Gr. WCB</td><td class="label">Stem / Shaft</td><td>ASTM A564 Gr. 630 (17-4PH)</td></tr>
+    <tr><td class="label">Trim / API Trim No.</td><td>Multi-Stage Anti-Cavitation</td><td class="label">Stem Packing / Seals</td><td>PTFE V-Ring / Low-Emission</td></tr>
+    <tr><td class="label">Disc / Ball / Plug / Wedge</td><td>ASTM A182 F316 + Stellite 6</td><td class="label">Body Gasket / O-Rings</td><td>Spiral Wound SS316 + Graphite</td></tr>
+    <tr><td class="label">Seat / Seat Ring</td><td>SS316 + Stellite 6 Overlay</td><td class="label">Bolting (Studs &amp; Nuts)</td><td>ASTM A193 B7 / A194 Gr. 2H</td></tr>
+  </table>
+  <div class="footer"><span class="left">Industrial Valve Engineering Datasheet — Standard Specification Template</span><span class="right">Page 1 of 2</span></div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page">
+  <table class="data">
+    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+    <tr class="section-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>
+    <tr><td class="label">Flow Characteristic</td><td>Equal Percentage</td><td class="label">Valve Travel (% Open)</td><td>Min: 28% &nbsp; Norm: 62% &nbsp; Max: 79%</td></tr>
+    <tr><td class="label">Required C<sub>v</sub> / K<sub>v</sub><br>(Min/Norm/Max)</td><td>12.6 / 36.8 / 58.4 (C<sub>v</sub>)</td><td class="label">Predicted Noise (dBA)</td><td>76 dBA @ 1 m (Limit &lt; 85 dBA)</td></tr>
+    <tr><td class="label">Selected Rated C<sub>v</sub> / K<sub>v</sub></td><td>82.0 C<sub>v</sub> (70.9 K<sub>v</sub>)</td><td class="label">Cavitation / Flashing Status</td><td>Incipient Cavitation Mitigated</td></tr>
+  </table>
+
+  <table class="data">
+    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+    <tr class="section-title"><th colspan="4">F. ACTUATION &amp; ACCESSORIES</th></tr>
+    <tr><td class="label">Operator / Actuator Type</td><td>Pneumatic Spring-Diaphragm</td><td class="label">Supply Air / Power Rating</td><td>4.5 bar(g) Instrument Air</td></tr>
+    <tr><td class="label">Fail-Safe Action</td><td>Fail Close (FC) — Air to Open</td><td class="label">Stroking Time (Open/Close)</td><td>6 sec Open / 5 sec Close</td></tr>
+    <tr><td class="label">Mounted Accessories</td><td colspan="3" class="checks">■ Smart Positioner (4–20mA HART) &nbsp;&nbsp; □ Limit Switches &nbsp;&nbsp; □ Solenoid Valve (SOV)<br>■ Air Filter Regulator &nbsp;&nbsp; □ Manual Override</td></tr>
+  </table>
+
+  <table class="data">
+    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+    <tr class="section-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
+    <tr><td class="label">Hydrostatic / Seat Test Std.</td><td>ASME B16.34 / ANSI FCI 70-2</td><td class="label">Seat Leakage Class</td><td>ANSI Class V (Metal Seated)</td></tr>
+    <tr><td class="label">Material Certification</td><td>EN 10204 Type 3.1</td><td class="label">NDT / NDE Requirements</td><td>100% RT on Butt Welds / PMI</td></tr>
+    <tr><td class="label">Special Compliance</td><td colspan="3" class="checks">□ NACE MR0175 (Sour Service) &nbsp;&nbsp; □ API 607 (Fire Safe)<br>■ ISO 15848-1 (Fugitive Emissions) &nbsp;&nbsp; □ SIL Certified</td></tr>
+    <tr><td class="label">Notes / Vendor Remarks</td><td colspan="3">Vendor to confirm cavitation index (σ) and supply certified C<sub>v</sub> curve with quotation.</td></tr>
+  </table>
+
+  <table class="data revision">
+    <colgroup><col style="width:10%"><col style="width:18%"><col style="width:24%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup>
+    <tr><th>Rev</th><th>Date</th><th>Revision Description</th><th>Prepared By</th><th>Checked By</th><th>Approved By</th></tr>
+    <tr><td class="center">0</td><td class="center">2026-11-26</td><td class="center">Issued for Design / Inquiry</td><td class="center">R. Patel</td><td class="center">S. Mehta</td><td class="center">A. Kulkarni</td></tr>
+  </table>
+  <div class="footer"><span class="left">Industrial Valve Engineering Datasheet — Standard Specification Template</span><span class="right">Page 2 of 2</span></div>
+</div>
+</body>
+</html>

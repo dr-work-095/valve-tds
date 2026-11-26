@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Enums\DatasheetAccessory;
+use App\Enums\DatasheetCompliance;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\StoreGeneratedDatasheetRequest;
 use App\Jobs\GenerateDatasheetPdfJob;
@@ -39,6 +41,8 @@ class DatasheetController extends Controller
             'models' => (new ValveModelReadiness)->selectableQuery()->orderBy('name')->get(),
             'company' => DB::connection('tenant')->table('company_settings')->where('id', 1)->first(),
             'activeMaterials' => Material::where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
+            'accessories' => DatasheetAccessory::cases(),
+            'complianceOptions' => DatasheetCompliance::cases(),
         ]);
     }
 

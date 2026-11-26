@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Enums\ValveComponentGroup;
 use App\Models\Material;
 use App\Models\ValveBomTemplate;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreValveBomTemplateRequest extends FormRequest
 {
@@ -26,6 +28,10 @@ class StoreValveBomTemplateRequest extends FormRequest
         return [
             'part_number' => ['required', 'integer', 'min:1'],
             'part_name' => ['required', 'string', 'max:150'],
+            'component_group' => ['required', Rule::enum(ValveComponentGroup::class)],
+            'quantity_per_valve' => ['required', 'numeric', 'gt:0', 'max:9999999.999', 'decimal:0,3'],
+            'unit' => ['required', 'string', 'max:20'],
+            'notes' => ['nullable', 'string', 'max:2000'],
             'standard_material_id' => ['required', 'integer', 'exists:tenant.materials,id'],
             'optional_material_ids' => ['nullable', 'array', 'max:50'],
             'optional_material_ids.*' => ['integer'],

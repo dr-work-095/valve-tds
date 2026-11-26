@@ -60,7 +60,7 @@ class GenerateDatasheetPdfJob implements ShouldQueue
                 ->setChromePath(env('CHROME_PATH', 'C:\Program Files\Google\Chrome\Application\chrome.exe'))
                 ->showBackground()
                 ->format('A4')
-                ->margins(8, 8, 8, 8)
+                ->margins(12, 13, 17, 13)
                 ->save($absolutePath);
 
             if (! is_file($absolutePath) || filesize($absolutePath) < 100) {

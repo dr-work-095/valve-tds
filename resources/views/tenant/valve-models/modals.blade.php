@@ -56,6 +56,24 @@
                 @error('part_name')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>
             <div>
+                <label for="bom_component_group" class="mb-1 block text-sm font-medium text-slate-700">Component group</label>
+                <select id="bom_component_group" name="component_group" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">Select component group</option>
+                    @foreach ($componentGroups as $group)<option value="{{ $group->value }}" @selected(old('component_group') === $group->value)>{{ $group->value }}</option>@endforeach
+                </select>
+                @error('component_group')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="bom_quantity_per_valve" class="mb-1 block text-sm font-medium text-slate-700">Quantity per valve</label>
+                <input id="bom_quantity_per_valve" name="quantity_per_valve" type="number" min="0.001" max="9999999.999" step="0.001" value="{{ old('quantity_per_valve', '1') }}" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                @error('quantity_per_valve')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="bom_unit" class="mb-1 block text-sm font-medium text-slate-700">Unit</label>
+                <input id="bom_unit" name="unit" value="{{ old('unit', 'ea') }}" maxlength="20" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                @error('unit')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+            </div>
+            <div>
                 <label for="bom_standard_material_id" class="mb-1 block text-sm font-medium text-slate-700">Standard material</label>
                 <select id="bom_standard_material_id" name="standard_material_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">Select material</option>
@@ -68,6 +86,11 @@
                 <select id="bom_optional_material_ids" name="optional_material_ids[]" multiple size="5" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     @foreach ($materials as $material)<option value="{{ $material->id }}" @selected(in_array((string) $material->id, array_map('strval', (array) old('optional_material_ids', []))))>{{ $material->code }} - {{ $material->name }}</option>@endforeach
                 </select>
+            </div>
+            <div class="sm:col-span-2">
+                <label for="bom_notes" class="mb-1 block text-sm font-medium text-slate-700">Component notes</label>
+                <textarea id="bom_notes" name="notes" rows="2" maxlength="2000" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('notes') }}</textarea>
+                @error('notes')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
             </div>
         </div>
         <div class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
@@ -102,7 +125,7 @@
     @if ($errors->hasAny(['size_inch','size_dn','pressure_class','end_connection','face_to_face_mm','end_to_end_mm','flange_od_mm','center_to_top_mm','weight_kg']))
         activateTab('dimensions');
         document.getElementById('dimension-modal')?.showModal();
-    @elseif ($errors->hasAny(['part_number','part_name','standard_material_id','optional_material_ids']))
+    @elseif ($errors->hasAny(['part_number','part_name','component_group','quantity_per_valve','unit','notes','standard_material_id','optional_material_ids']))
         activateTab('bom');
         document.getElementById('bom-modal')?.showModal();
     @endif

@@ -29,7 +29,9 @@ revision history.
 ### 2. Configurator UI and lookup endpoints
 
 1. Add a create form for client name, project reference, document number, model,
-   dimension combination, BOM materials, and project notes.
+   dimension combination, BOM materials, and the optional project-specific
+   identification, operating conditions, mechanical details, performance,
+   actuation, compliance, and revision sign-off values in the engineering template.
 2. Provide suggestions for returning client names and searchable model/material
    selection using the source plan's autocomplete patterns.
 3. When a ready model is selected, return its available dimension combinations and
@@ -38,6 +40,11 @@ revision history.
 5. Show default notes and allow sales users to edit notes for this document.
 6. Validate all endpoint IDs and fields on the server; ignore or reject forged
    dimensions/BOM values not belonging to the selected model and tenant.
+7. Keep project-specific line size, operating conditions, sizing, actuation,
+   compliance, and sign-off on the datasheet. Source reusable mechanical
+   construction, flow characteristic, and default seat-leakage class from Valve
+   Model; source size measurements from Valve Dimensions and component quantities,
+   group labels, materials, and notes from Valve BOM.
 
 ### 3. Quota and snapshot creation
 
@@ -47,13 +54,16 @@ revision history.
 2. Perform quota checking and creation with an approach that avoids concurrent
    submissions exceeding the limit.
 3. Resolve selected material IDs server-side into stable display strings (code and
-   name); store values, not just live catalog references.
+   name); store values, not just live catalog references. Snapshot BOM component
+   group, part name, quantity, unit, and notes with each material.
 4. Freeze company settings, model metadata, selected dimension values, ordered BOM
-   parts/materials, notes, client/project data, document number, and revision data in
-   `selected_specs`.
-5. Validate snapshot shape before persistence and use a database transaction for the
+   component details/materials, notes, client/project data, document number, and
+   revision data in `selected_specs`.
+5. Store project-specific values in the same immutable JSON snapshot; do not add
+   per-field database columns. Control performance fields apply to modulating models.
+6. Validate snapshot shape before persistence and use a database transaction for the
    datasheet record and related state changes.
-6. Ensure future edits/deactivation of source records do not modify an existing
+7. Ensure future edits/deactivation of source records do not modify an existing
    snapshot.
 
 ### 4. Revision workflow
@@ -98,8 +108,13 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
   constraints, immutable JSON snapshots, private PDF fields, and parent revision links.
 - Added Sales-accessible datasheet listing, configurator, tenant-scoped lookup
   endpoints, and ready-model filtering.
-- Datasheet snapshots freeze company data, model metadata, selected dimensions,
-  ordered BOM parts, resolved material display values, notes, and client/project data.
+- Datasheet snapshots freeze company data, model metadata and reusable construction
+  defaults, selected dimensions, ordered BOM component details and resolved material
+  display values, notes, client/project data, and optional engineering conditions
+  captured from the datasheet form.
+- The PDF follows the two-page industrial datasheet template with identification,
+  operating conditions, mechanical construction, BOM, control performance,
+  actuation, testing/compliance, and revision sign-off sections.
 - Cross-model dimensions and forged/inactive/ineligible BOM material selections are
   rejected server-side.
 - Revisions clone the source snapshot, allocate monotonic revision numbers, and link
@@ -120,10 +135,18 @@ immutability, cross-model validation, and revision linkage.
   is rejected and concurrent submissions cannot exceed the limit.
 - Confirm changing a tenant limit takes effect without code deployment or restart.
 - Select a ready model and verify dimensions and allowed BOM materials populate.
+- Confirm datasheets source model construction and BOM component details from the
+  catalog, while line size and operating/actuation values remain project-specific.
+- Enter optional values across the engineering datasheet sections; confirm values
+  are validated, frozen in the snapshot, and rendered in the generated PDF.
+- Confirm control-performance inputs and PDF section are only shown for
+  Control / Modulating models; leave non-applicable fields blank.
 - Submit a forged dimension or material from another model/tenant and confirm
   validation rejects it.
 - Edit source company, model, dimension, or material records after creation and
   confirm the existing snapshot remains unchanged.
+- Confirm snapshots preserve model construction defaults and BOM component group,
+  quantity, unit, notes, and resolved material labels.
 - Create revisions only from generated datasheets and confirm each revision number
   is monotonic and linked to the original.
 - Confirm document number/revision uniqueness is enforced by the database.

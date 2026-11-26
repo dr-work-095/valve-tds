@@ -19,6 +19,8 @@ combinations and an ordered, validated BOM that can be consumed by the configura
    responsive table behavior.
 2. Add create/edit flows for size in inches and DN, pressure class, end connection,
    face-to-face, end-to-end, flange OD, center-to-top, weight, and extra dimensions.
+   Keep this size-specific information on `ValveDimension`; the existing schema
+   already contains these columns and does not need duplicate fields.
 3. Offer autocomplete suggestions for common size, DN, pressure-class, and
    end-connection values while accepting validated tenant-specific values.
 4. Validate numeric dimensions as non-negative decimals with the specified precision.
@@ -30,8 +32,10 @@ combinations and an ordered, validated BOM that can be consumed by the configura
 ### 2. BOM template manager
 
 1. Add an ordered BOM editor linked to a valve model.
-2. Persist part number, part name, standard material, and optional allowed material
-   overrides according to the source schema.
+2. Persist part number, part name, component group, quantity per valve, unit, notes,
+   standard material, and optional allowed material overrides. Keep material and
+   component-group values as strings in the database, with server-side validation
+   for component groups.
 3. Provide autocomplete for common part names and tenant-scoped searchable material
    selection.
 4. Validate that all selected material IDs belong to the current tenant and are
@@ -77,6 +81,15 @@ The Phase 4 dimension and BOM implementation is complete for the current MVP sur
 - Tenant migrations now create `valve_dimensions` and `valve_bom_templates` with
   parent foreign keys, decimal measurements, JSON extra dimensions, and database
   unique constraints for dimension tuples and model part numbers.
+- An additive tenant migration adds reusable construction defaults to
+  `valve_models` and component group, per-valve quantity, unit, and notes to BOM
+  templates. Existing BOM rows retain their values and receive the safe defaults
+  of quantity `1` and unit `ea`; the new descriptive fields remain nullable.
+- Rolling back after those new fields contain tenant data will remove that data;
+  prefer a forward-fix migration over rollback after deployment.
+- All dimension measurements remain size-specific and are displayed in the model's
+  dimension tab; no new dimension migration is needed because the required columns
+  already exist.
 - Valve-model pages link to tenant-admin dimension and BOM managers.
 - Dimension and BOM configuration are consolidated into tabs on the valve-model
   edit page. New rows are created through native modal dialogs from the active tab.
@@ -84,7 +97,8 @@ The Phase 4 dimension and BOM implementation is complete for the current MVP sur
   over-precision measurements. Optional dimensions and extra measurements are
   persisted safely.
 - BOM create/update validation rejects duplicate part numbers, inactive materials,
-  and material IDs outside the initialized tenant database.
+  invalid component groups, non-positive quantities, and material IDs outside the
+  initialized tenant database.
 - BOM rows are read deterministically by `part_number`, and referenced standard or
   optional materials cannot be deactivated.
 - `ValveModelReadiness` is shared by model UI/DataTable and provides a selectable
@@ -109,6 +123,11 @@ numbers, active tenant material validation, and shared model readiness.
 - Add BOM rows and confirm they display in ascending part-number order.
 - Submit duplicate BOM part numbers and confirm create/update validation rejects
   them.
+- Save a BOM row with a component group, fractional positive quantity, unit, and
+  notes; confirm invalid groups and non-positive quantities are rejected.
+- Confirm existing BOM rows show quantity `1 ea` after the additive migration.
+- Confirm the dimension table displays face-to-face, end-to-end, flange OD,
+  center-to-top, and weight values from the size-specific record.
 - Confirm standard and optional material selections contain only active tenant
   materials and reject cross-tenant or inactive IDs.
 - Try to deactivate a material referenced by a standard or optional BOM field and

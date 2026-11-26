@@ -13,6 +13,10 @@ class ValveBomTemplate extends Model
         'valve_model_id',
         'part_number',
         'part_name',
+        'component_group',
+        'quantity_per_valve',
+        'unit',
+        'notes',
         'standard_material_id',
         'optional_material_ids',
     ];
@@ -21,6 +25,7 @@ class ValveBomTemplate extends Model
     {
         return [
             'optional_material_ids' => 'array',
+            'quantity_per_valve' => 'decimal:3',
         ];
     }
 
