@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Enums\DatasheetAccessory;
 use App\Enums\DatasheetCompliance;
+use App\Enums\ValveCategory;
+use App\Enums\ValveType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\PrepareGeneratedDatasheetRequest;
 use App\Http\Requests\Tenant\StoreGeneratedDatasheetRequest;
 use App\Jobs\GenerateDatasheetPdfJob;
 use App\Models\GeneratedDatasheet;
@@ -19,6 +22,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -39,11 +43,123 @@ class DatasheetController extends Controller
             'user' => Auth::guard('web')->user(),
             'tenant' => tenancy()->tenant,
             'models' => (new ValveModelReadiness)->selectableQuery()->orderBy('name')->get(),
-            'company' => DB::connection('tenant')->table('company_settings')->where('id', 1)->first(),
-            'activeMaterials' => Material::where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
+        ]);
+    }
+
+    public function prepare(PrepareGeneratedDatasheetRequest $request): RedirectResponse
+    {
+        $draft = (string) Str::uuid();
+        session()->put('tenant_datasheet_drafts.'.$draft, $request->validated());
+
+        return redirect()->route('tenant.datasheets.editor', $draft);
+    }
+
+    public function editor(string $draft, DatasheetSnapshotBuilder $snapshotBuilder): View
+    {
+        $selection = session()->get('tenant_datasheet_drafts.'.$draft);
+        abort_unless(is_array($selection), 404);
+
+        $model = (new ValveModelReadiness)
+            ->selectableQuery()
+            ->findOrFail($selection['valve_model_id']);
+        $dimension = $model->dimensions()->find($selection['dimension_id']);
+        abort_unless($dimension, 404);
+
+        $bomMaterials = [];
+        $bomTemplates = $model->bomTemplates()
+            ->with('standardMaterial')
+            ->orderBy('part_number')
+            ->get();
+
+        foreach ($bomTemplates as $bomTemplate) {
+            $allowedMaterialIds = array_map('intval', array_merge(
+                [$bomTemplate->standard_material_id],
+                (array) $bomTemplate->optional_material_ids,
+            ));
+            $allowedMaterials = Material::query()
+                ->where('is_active', true)
+                ->whereIn('id', $allowedMaterialIds)
+                ->orderBy('code')
+                ->get();
+            $material = $allowedMaterials->firstWhere('id', (int) $bomTemplate->standard_material_id)
+                ?? $allowedMaterials->first();
+
+            if (! $material) {
+                throw ValidationException::withMessages([
+                    'valve_model_id' => "BOM part {$bomTemplate->part_number} has no active allowed material.",
+                ]);
+            }
+
+            $bomMaterials[] = [
+                'bom_template_id' => (int) $bomTemplate->id,
+                'material_id' => (int) $material->id,
+            ];
+        }
+
+        $company = (array) (DB::connection('tenant')->table('company_settings')->where('id', 1)->first() ?? []);
+        $defaultNotes = json_decode((string) ($company['default_notes'] ?? '[]'), true);
+        $notes = implode("\n", array_filter((array) $defaultNotes, 'is_string'));
+        $datasheetFields = [
+            'document_status' => 'Issued for Inquiry',
+            'identification' => [],
+            'process_conditions' => [
+                'flow_rate' => ['units' => 'm³/h'],
+                'inlet_pressure' => ['units' => 'bar(g)'],
+                'outlet_pressure' => ['units' => 'bar(g)'],
+                'operating_temperature' => ['units' => '°C'],
+                'density' => ['units' => 'kg/m³'],
+                'specific_gravity' => [],
+                'molecular_weight' => ['units' => 'g/mol'],
+                'viscosity' => ['units' => 'cP'],
+                'vapor_pressure' => ['units' => 'bar(a)'],
+            ],
+            'mechanical' => [],
+            'control_performance' => [],
+            'actuation' => [],
+            'testing_compliance' => [
+                'hydrostatic_seat_test_standard' => $model->testing_standard,
+                'seat_leakage_class' => $model->seat_leakage_class,
+            ],
+            'revision' => [
+                'description' => 'Issued for Design / Inquiry',
+            ],
+        ];
+        $snapshot = $snapshotBuilder->build(
+            $model,
+            $dimension,
+            $bomMaterials,
+            $company,
+            [
+                ...$selection,
+                'bom_materials' => $bomMaterials,
+                'notes' => $notes,
+                'datasheet_fields' => $datasheetFields,
+            ],
+        );
+
+        return view('tenant.datasheets.editor', [
+            'user' => Auth::guard('web')->user(),
+            'tenant' => tenancy()->tenant,
+            'draft' => $draft,
+            'selection' => $selection,
+            'snapshot' => $snapshot,
+            'bomSelections' => $bomMaterials,
             'accessories' => DatasheetAccessory::cases(),
             'complianceOptions' => DatasheetCompliance::cases(),
+            'valveCategories' => ValveCategory::cases(),
+            'valveTypes' => ValveType::cases(),
+            'revisionDate' => now()->toDateString(),
         ]);
+    }
+
+    public function backToSetup(string $draft): RedirectResponse
+    {
+        $selection = session()->get('tenant_datasheet_drafts.'.$draft);
+        abort_unless(is_array($selection), 404);
+
+        session()->forget('tenant_datasheet_drafts.'.$draft);
+
+        return redirect()->route('tenant.datasheets.create')->withInput($selection);
     }
 
     public function modelsLookup(): JsonResponse
@@ -137,6 +253,10 @@ class DatasheetController extends Controller
 
             return $datasheet;
         });
+
+        if ($request->filled('draft_id')) {
+            session()->forget('tenant_datasheet_drafts.'.$request->input('draft_id'));
+        }
 
         return redirect()->route('tenant.datasheets.index')->with('status', 'Datasheet created.');
     }

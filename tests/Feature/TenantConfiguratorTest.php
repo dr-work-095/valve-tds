@@ -273,6 +273,7 @@ class TenantConfiguratorTest extends TestCase
             'snapshot' => $snapshot,
         ])->render();
         $this->assertStringContainsString('FCV-204', $pdfHtml);
+        $this->assertStringContainsString('Original Client', $pdfHtml);
         $this->assertStringContainsString('Valve Type / Pattern', $pdfHtml);
         $this->assertStringContainsString('Gate / Gate Ready', $pdfHtml);
         $this->assertStringContainsString('PROCESS &amp; OPERATING CONDITIONS', $pdfHtml);
@@ -374,28 +375,217 @@ class TenantConfiguratorTest extends TestCase
                     'mounted_accessories' => ['Unknown accessory'],
                 ],
             ],
+            'snapshot_edits' => [
+                'model' => ['is_active' => false],
+            ],
         ])->assertSessionHasErrors([
             'datasheet_fields.process_conditions.flow_rate.minimum',
             'datasheet_fields.control_performance',
             'datasheet_fields.actuation.mounted_accessories.0',
+            'snapshot_edits.model',
         ]);
     }
 
-    public function test_create_datasheet_page_renders(): void
+    public function test_new_datasheet_uses_compact_setup_and_opens_editor_without_creating_a_record(): void
     {
+        Queue::fake();
         [$tenant, $sales] = $this->createTenantUser('sales');
         $this->prepareTenantDatabase($tenant);
+        [$model, $dimension] = $this->createReadyModel($tenant);
 
         $this->actingAs($sales, 'web')
             ->get(route('tenant.datasheets.create'))
             ->assertOk()
-            ->assertSee('Create datasheet')
+            ->assertSee('Step 1 of 2')
+            ->assertSee('name="client_name"', false)
+            ->assertSee('name="project_reference"', false)
+            ->assertSee('name="document_number"', false)
             ->assertSee('valve_model_id', false)
-            ->assertSee('datasheet_fields[identification][equipment_tag]', false)
-            ->assertSee('datasheet_fields[process_conditions][flow_rate][minimum]', false)
-            ->assertDontSee('datasheet_fields[control_performance][flow_characteristic]', false)
-            ->assertSee('datasheet_fields[testing_compliance][seat_leakage_class]', false)
-            ->assertSee('NACE MR0175 (Sour Service)');
+            ->assertSee('dimension_id', false)
+            ->assertSee('Next')
+            ->assertDontSee('datasheet_fields[process_conditions][flow_rate][minimum]', false)
+            ->assertDontSee('BOM materials');
+
+        $response = $this->actingAs($sales, 'web')->post(route('tenant.datasheets.prepare'), [
+            'client_name' => 'Setup Client',
+            'project_reference' => 'SETUP-204',
+            'document_number' => 'TDS-SETUP',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+        ]);
+        $response->assertRedirect();
+        $editorUrl = $response->headers->get('Location');
+        $draftId = basename((string) parse_url($editorUrl, PHP_URL_PATH));
+
+        $this->actingAs($sales, 'web')->get($editorUrl)
+            ->assertOk()
+            ->assertSee('Step 2 of 2')
+            ->assertSee('name="snapshot_edits[model][name]"', false)
+            ->assertSee('value="Gate Ready"', false)
+            ->assertSee('name="datasheet_fields[mechanical][nominal_size]"', false)
+            ->assertSee('value="(4&quot;) Body"', false)
+            ->assertDontSee('name="snapshot_edits[dimension][size_dn]"', false)
+            ->assertDontSee('name="snapshot_edits[dimension][size_inch]"', false)
+            ->assertDontSee('name="datasheet_fields[mechanical][line_size]"', false)
+            ->assertSee('name="snapshot_edits[bom][0][part_name]"', false)
+            ->assertSee('name="datasheet_fields[process_conditions][flow_rate][minimum]"', false)
+            ->assertSee('name="client_name"', false)
+            ->assertSee('Create datasheet');
+
+        $this->actingAs($sales, 'web')
+            ->post(route('tenant.datasheets.editor.back', $draftId))
+            ->assertRedirect(route('tenant.datasheets.create'));
+        $this->actingAs($sales, 'web')->get(route('tenant.datasheets.create'))
+            ->assertOk()
+            ->assertSee('value="Setup Client"', false)
+            ->assertSee('value="SETUP-204"', false);
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, GeneratedDatasheet::count());
+        $this->assertSame(0, Queue::pushed(GenerateDatasheetPdfJob::class)->count());
+        tenancy()->end();
+    }
+
+    public function test_datasheet_editor_persists_edits_only_in_snapshot(): void
+    {
+        Queue::fake();
+        [$tenant, $sales] = $this->createTenantUser('sales');
+        $this->prepareTenantDatabase($tenant);
+        [$model, $dimension, $bom] = $this->createReadyModel($tenant);
+
+        $response = $this->actingAs($sales, 'web')->post(route('tenant.datasheets.prepare'), [
+            'client_name' => 'Initial Client',
+            'project_reference' => 'INITIAL-204',
+            'document_number' => 'TDS-INITIAL',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+        ]);
+        $draftId = basename((string) parse_url((string) $response->headers->get('Location'), PHP_URL_PATH));
+        $this->actingAs($sales, 'web')->get(route('tenant.datasheets.editor', $draftId))->assertOk();
+
+        $this->actingAs($sales, 'web')->post(route('tenant.datasheets.store'), [
+            'draft_id' => $draftId,
+            'client_name' => 'Edited Project Client',
+            'project_reference' => 'EDITED-204',
+            'document_number' => 'TDS-EDITED',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+            'bom_materials' => [[
+                'bom_template_id' => $bom->id,
+                'material_id' => $bom->standard_material_id,
+            ]],
+            'snapshot_edits' => [
+                'model' => [
+                    'name' => 'Project-Specific Valve',
+                    'valve_category' => 'Control / Modulating',
+                    'valve_type' => 'Globe',
+                    'design_standard' => 'Project ASME Standard',
+                ],
+                'dimension' => [
+                    'size_inch' => '6"',
+                    'size_dn' => 'DN150',
+                    'pressure_class' => 'Class 300',
+                    'end_connection' => 'RF Flange',
+                ],
+                'bom' => [
+                    [
+                        'component_group' => 'Project Body Group',
+                        'part_name' => 'Project Body',
+                        'material_code' => 'PROJECT-WCB',
+                        'material_name' => 'Project Carbon Steel',
+                        'quantity_per_valve' => 2,
+                        'unit' => 'set',
+                        'notes' => 'Project-specific BOM note',
+                    ],
+                ],
+            ],
+            'notes' => 'Project-specific vendor notes',
+            'datasheet_fields' => [
+                'document_status' => 'Issued for Approval',
+                'process_conditions' => [
+                    'fluid_phase_state' => 'Liquid, clean water',
+                    'flow_rate' => [
+                        'units' => 'm³/h',
+                        'minimum' => 10,
+                        'normal' => 20,
+                        'maximum' => 30,
+                    ],
+                ],
+                'mechanical' => [
+                    'nominal_size' => 'DN150 (6") Body / 4" Line',
+                ],
+                'control_performance' => [
+                    'predicted_noise' => '72 dBA',
+                ],
+                'testing_compliance' => [
+                    'hydrostatic_seat_test_standard' => '',
+                    'seat_leakage_class' => '',
+                ],
+            ],
+        ])->assertRedirect(route('tenant.datasheets.index'));
+
+        tenancy()->initialize($tenant);
+        $datasheet = GeneratedDatasheet::where('document_number', 'TDS-EDITED')->firstOrFail();
+        $snapshot = $datasheet->selected_specs;
+
+        $this->assertSame('Edited Project Client', $datasheet->client_name);
+        $this->assertSame('Project-Specific Valve', $snapshot['model']['name']);
+        $this->assertSame('Control / Modulating', $snapshot['model']['valve_category']);
+        $this->assertSame('6"', $snapshot['dimension']['size_inch']);
+        $this->assertSame('DN150 (6") Body / 4" Line', $snapshot['datasheet_fields']['mechanical']['nominal_size']);
+        $this->assertSame('Project Body', $snapshot['bom'][0]['part_name']);
+        $this->assertSame('PROJECT-WCB', $snapshot['bom'][0]['material_code']);
+        $this->assertSame('Liquid, clean water', $snapshot['datasheet_fields']['process_conditions']['fluid_phase_state']);
+        $this->assertSame('72 dBA', $snapshot['datasheet_fields']['control_performance']['predicted_noise']);
+        $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['hydrostatic_seat_test_standard']);
+        $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['seat_leakage_class']);
+        $this->assertSame('Gate Ready', ValveModel::findOrFail($model->id)->name);
+        $this->assertSame('4"', ValveDimension::findOrFail($dimension->id)->size_inch);
+        $this->assertSame('Body', $bom->fresh()->part_name);
+        $pdfHtml = view('tenant.datasheets.pdf', [
+            'datasheet' => $datasheet,
+            'snapshot' => $snapshot,
+        ])->render();
+        $this->assertStringContainsString('DN150 (6&quot;) Body / 4&quot; Line', $pdfHtml);
+        $this->assertStringNotContainsString('API 598', $pdfHtml);
+        $this->assertStringNotContainsString('ANSI Class V', $pdfHtml);
+        $this->assertSame(1, Queue::pushed(
+            GenerateDatasheetPdfJob::class,
+            fn ($job, $queue) => $queue === 'high'
+                && $job->tenantId === $tenant->id
+                && $job->datasheetId === $datasheet->id,
+        )->count());
+        tenancy()->end();
+    }
+
+    public function test_setup_rejects_a_dimension_from_another_model(): void
+    {
+        [$tenant, $sales] = $this->createTenantUser('sales');
+        $this->prepareTenantDatabase($tenant);
+        [$model] = $this->createReadyModel($tenant);
+
+        tenancy()->initialize($tenant);
+        $otherModel = ValveModel::create([
+            'name' => 'Other Model',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Ball',
+            'design_standard' => 'API 6D',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        $otherDimension = ValveDimension::create([
+            'valve_model_id' => $otherModel->id,
+            'size_inch' => '8"',
+            'pressure_class' => 'Class 300',
+            'end_connection' => 'RF Flange',
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($sales, 'web')->post(route('tenant.datasheets.prepare'), [
+            'client_name' => 'Invalid Setup',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $otherDimension->id,
+        ])->assertSessionHasErrors('dimension_id');
     }
 
     private function createTenantUser(string $role): array

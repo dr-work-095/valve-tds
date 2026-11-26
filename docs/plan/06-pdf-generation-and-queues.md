@@ -98,6 +98,8 @@ Phase 6 is implemented for the current MVP surface:
 - Sections A–G follow the supplied [industrial datasheet reference](../industrial-valve-datasheet.html),
   with project engineering values read exclusively from the immutable snapshot;
   control-performance data is displayed only for Control / Modulating models.
+- The PDF header includes the client name alongside document, revision, and project
+  metadata.
 - `spatie/browsershot` and Puppeteer are installed; Chrome is configurable through
   `CHROME_PATH`.
 - Job retries use 3 attempts with a 60-second timeout and are queued with backoff.
@@ -133,6 +135,9 @@ php artisan app:seed-sample-datasheet --no-interaction
   the unchanged snapshot.
 - Compare the generated two-page PDF with the supplied reference for section order,
   grouped process metrics, table layout, and page labels.
+- Confirm the client name shown in the datasheet editor appears in the generated PDF.
+- Edit the combined nominal-size value and confirm the PDF uses the edited value
+  while the selected catalog dimension remains unchanged.
 - Verify A4 page size and template margins, Unicode/engineering text, optional logo,
   blank optional values, BOM ordering, overflow, and multi-page behavior.
 - Run `php artisan app:expire-overdue-tenants` and confirm overdue trial/active tenants

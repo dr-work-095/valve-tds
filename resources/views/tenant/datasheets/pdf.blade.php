@@ -13,6 +13,12 @@
     $revision = $fields['revision'] ?? [];
     $accessories = $actuation['mounted_accessories'] ?? [];
     $compliance = $testing['special_compliance'] ?? [];
+    $hydrostaticTestStandard = array_key_exists('hydrostatic_seat_test_standard', $testing)
+        ? $testing['hydrostatic_seat_test_standard']
+        : ($model['testing_standard'] ?? null);
+    $seatLeakageClass = array_key_exists('seat_leakage_class', $testing)
+        ? $testing['seat_leakage_class']
+        : ($model['seat_leakage_class'] ?? null);
     $valueOrDash = fn ($value) => filled($value) ? $value : '—';
     $metricValue = fn ($key, $point) => $valueOrDash(data_get($process, $key.'.'.$point));
     $metricUnit = fn ($key, $default = '—') => $valueOrDash(data_get($process, $key.'.units', $default));
@@ -34,6 +40,14 @@
         $bodySizeParts[] = '('.$dimension['size_inch'].')';
     }
     $bodyNominalSize = implode(' ', $bodySizeParts);
+    $nominalSize = $mechanical['nominal_size'] ?? null;
+    if (! array_key_exists('nominal_size', $mechanical)) {
+        $nominalSizeParts = filled($bodyNominalSize) ? [$bodyNominalSize.' Body'] : [];
+        if (filled($mechanical['line_size'] ?? null)) {
+            $nominalSizeParts[] = $mechanical['line_size'].' Line';
+        }
+        $nominalSize = implode(' / ', $nominalSizeParts);
+    }
     $accessoryOptions = array_map(
         fn ($accessory) => $accessory->value,
         \App\Enums\DatasheetAccessory::cases(),
@@ -114,6 +128,7 @@
             <td class="meta">
                 <table class="meta-table">
                     <tr><td>Document No.:</td><td>{{ $datasheet->document_number }}</td></tr>
+                    <tr><td>Client:</td><td>{{ $valueOrDash($datasheet->client_name) }}</td></tr>
                     <tr><td>Revision / Status:</td><td>{{ $datasheet->revision }} — {{ $valueOrDash($fields['document_status'] ?? null) }}</td></tr>
                     <tr><td>Date / Project Ref.:</td><td>{{ $datasheet->created_at?->format('Y-m-d') }} / {{ $valueOrDash($snapshot['project_reference'] ?? null) }}</td></tr>
                 </table>
@@ -147,7 +162,7 @@
     <table class="data">
         <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
         <tr class="section-title"><th colspan="4">C. VALVE BODY &amp; MECHANICAL CONSTRUCTION</th></tr>
-        <tr><td class="label">Nominal Valve Size (DN / NPS)</td><td>{{ $valueOrDash($bodyNominalSize) }} Body / {{ $valueOrDash($mechanical['line_size'] ?? null) }} Line</td><td class="label">End Connections</td><td>{{ $valueOrDash($dimension['end_connection'] ?? null) }} ({{ $valueOrDash($model['end_connection_standard'] ?? null) }})</td></tr>
+        <tr><td class="label">Nominal Valve Size (DN / NPS)</td><td>{{ $valueOrDash($nominalSize) }}</td><td class="label">End Connections</td><td>{{ $valueOrDash($dimension['end_connection'] ?? null) }} ({{ $valueOrDash($model['end_connection_standard'] ?? null) }})</td></tr>
         <tr><td class="label">Pressure Class / Rating</td><td>{{ $valueOrDash($dimension['pressure_class'] ?? null) }}</td><td class="label">Flange Facing &amp; Finish</td><td>{{ $valueOrDash(filled($model['flange_facing_finish'] ?? null) ? $model['flange_facing_finish'] : ($mechanical['flange_facing_finish'] ?? null)) }}</td></tr>
         <tr><td class="label">Design Standard (API / ASME)</td><td>{{ $valueOrDash($model['design_standard'] ?? null) }}</td><td class="label">Bonnet / Cover Type</td><td>{{ $valueOrDash(filled($model['bonnet_cover_type'] ?? null) ? $model['bonnet_cover_type'] : ($mechanical['bonnet_cover_type'] ?? null)) }}</td></tr>
         <tr><td class="label">Face-to-Face Standard</td><td>{{ $valueOrDash($model['face_to_face_standard'] ?? null) }}</td><td class="label">Bore / Port Configuration</td><td>{{ $valueOrDash(filled($model['bore_port_configuration'] ?? null) ? $model['bore_port_configuration'] : ($mechanical['bore_port_configuration'] ?? null)) }}</td></tr>
@@ -201,7 +216,7 @@
     <table class="data">
         <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
         <tr class="section-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
-        <tr><td class="label">Hydrostatic / Seat Test Std.</td><td>{{ $valueOrDash($testing['hydrostatic_seat_test_standard'] ?? $model['testing_standard'] ?? null) }}</td><td class="label">Seat Leakage Class</td><td>{{ $valueOrDash(filled($testing['seat_leakage_class'] ?? null) ? $testing['seat_leakage_class'] : ($model['seat_leakage_class'] ?? null)) }}</td></tr>
+        <tr><td class="label">Hydrostatic / Seat Test Std.</td><td>{{ $valueOrDash($hydrostaticTestStandard) }}</td><td class="label">Seat Leakage Class</td><td>{{ $valueOrDash($seatLeakageClass) }}</td></tr>
         <tr><td class="label">Material Certification</td><td>{{ $valueOrDash($testing['material_certification'] ?? null) }}</td><td class="label">NDT / NDE Requirements</td><td>{{ $valueOrDash($testing['ndt_requirements'] ?? null) }}</td></tr>
         <tr><td class="label">Special Compliance</td><td colspan="3" class="checks">
             @foreach ($complianceRows as $row)

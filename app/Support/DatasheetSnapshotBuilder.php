@@ -67,7 +67,7 @@ class DatasheetSnapshotBuilder
 
         usort($bom, fn (array $left, array $right): int => $left['part_number'] <=> $right['part_number']);
 
-        return [
+        $snapshot = [
             'company' => [
                 'company_name' => $company['company_name'] ?? null,
                 'address' => $company['address'] ?? null,
@@ -111,5 +111,26 @@ class DatasheetSnapshotBuilder
             'notes' => $input['notes'] ?? null,
             'datasheet_fields' => $input['datasheet_fields'] ?? [],
         ];
+
+        $snapshotEdits = $input['snapshot_edits'] ?? [];
+        foreach (['model', 'dimension'] as $section) {
+            $snapshot[$section] = array_replace(
+                $snapshot[$section],
+                $snapshotEdits[$section] ?? [],
+            );
+        }
+
+        $bomEdits = $snapshotEdits['bom'] ?? [];
+        foreach ($bomEdits as $index => $edit) {
+            if (! array_key_exists($index, $snapshot['bom'])) {
+                throw ValidationException::withMessages([
+                    'snapshot_edits.bom' => 'A datasheet BOM edit does not match a selected BOM row.',
+                ]);
+            }
+
+            $snapshot['bom'][$index] = array_replace($snapshot['bom'][$index], $edit);
+        }
+
+        return $snapshot;
     }
 }

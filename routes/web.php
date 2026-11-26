@@ -54,6 +54,12 @@ Route::middleware(['auth:web', 'tenant.initialize'])->group(function () {
             'create' => 'tenant.datasheets.create',
             'store' => 'tenant.datasheets.store',
         ]);
+    Route::post('/datasheets/editor', [DatasheetController::class, 'prepare'])
+        ->name('tenant.datasheets.prepare');
+    Route::get('/datasheets/editor/{draft}', [DatasheetController::class, 'editor'])
+        ->name('tenant.datasheets.editor');
+    Route::post('/datasheets/editor/{draft}/back', [DatasheetController::class, 'backToSetup'])
+        ->name('tenant.datasheets.editor.back');
     Route::post('/datasheets/{datasheet}/revision', [DatasheetController::class, 'revision'])
         ->name('tenant.datasheets.revision');
     Route::get('/datasheets/{datasheet}/download', [DatasheetController::class, 'download'])

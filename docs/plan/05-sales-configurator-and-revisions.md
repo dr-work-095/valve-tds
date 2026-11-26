@@ -28,10 +28,11 @@ revision history.
 
 ### 2. Configurator UI and lookup endpoints
 
-1. Add a create form for client name, project reference, document number, model,
-   dimension combination, BOM materials, and the optional project-specific
-   identification, operating conditions, mechanical details, performance,
-   actuation, compliance, and revision sign-off values in the engineering template.
+1. Keep the first create step compact: collect client name, project reference,
+   document number, valve model, and dimension. After Next, show the engineering
+   datasheet layout with compact editable inputs for the selected catalog values,
+   BOM, and project-specific identification, operating, performance, actuation,
+   compliance, notes, and revision sign-off data.
 2. Provide suggestions for returning client names and searchable model/material
    selection using the source plan's autocomplete patterns.
 3. When a ready model is selected, return its available dimension combinations and
@@ -41,10 +42,11 @@ revision history.
 6. Validate all endpoint IDs and fields on the server; ignore or reject forged
    dimensions/BOM values not belonging to the selected model and tenant.
 7. Keep project-specific line size, operating conditions, sizing, actuation,
-   compliance, and sign-off on the datasheet. Source reusable mechanical
+   compliance, and sign-off on the datasheet. Prefill reusable mechanical
    construction, flow characteristic, and default seat-leakage class from Valve
-   Model; source size measurements from Valve Dimensions and component quantities,
-   group labels, materials, and notes from Valve BOM.
+   Model; prefill selected size values from Valve Dimensions and BOM values from
+   Valve BOM. Allow edits to these prefills in the datasheet snapshot without
+   modifying the reusable catalog records.
 
 ### 3. Quota and snapshot creation
 
@@ -108,6 +110,13 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
   constraints, immutable JSON snapshots, private PDF fields, and parent revision links.
 - Added Sales-accessible datasheet listing, configurator, tenant-scoped lookup
   endpoints, and ready-model filtering.
+- Datasheet creation uses a compact setup step followed by an editable,
+  PDF-template-style datasheet editor. The Next action only prepares the editor;
+  final submission creates the immutable snapshot and queues PDF generation.
+- Prefilled model, dimension, and BOM values can be edited per datasheet and are
+  saved only in its snapshot, leaving reusable catalog records unchanged.
+- The nominal-size cell uses one combined text override for body and line sizing;
+  selected catalog dimension values remain preserved separately in the snapshot.
 - Datasheet snapshots freeze company data, model metadata and reusable construction
   defaults, selected dimensions, ordered BOM component details and resolved material
   display values, notes, client/project data, and optional engineering conditions
@@ -134,7 +143,12 @@ immutability, cross-model validation, and revision linkage.
 - Create datasheets at the configured monthly limit, then confirm the next creation
   is rejected and concurrent submissions cannot exceed the limit.
 - Confirm changing a tenant limit takes effect without code deployment or restart.
-- Select a ready model and verify dimensions and allowed BOM materials populate.
+- Select a ready model and verify its dimensions and BOM values prefill the editor.
+- Confirm the first step contains only client/project/document and valve/dimension
+  selection, and that Next creates neither a datasheet record nor a PDF job.
+- Confirm the second step presents compact editable fields in the datasheet layout,
+  prefilled values can be changed, Back preserves the setup values, and edits affect
+  only the new datasheet snapshot rather than catalog records.
 - Confirm datasheets source model construction and BOM component details from the
   catalog, while line size and operating/actuation values remain project-specific.
 - Enter optional values across the engineering datasheet sections; confirm values
