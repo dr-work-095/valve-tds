@@ -14,6 +14,7 @@ use App\Models\ValveDimension;
 use App\Models\ValveModel;
 use App\Support\TenantPlanLimits;
 use App\Support\ValveModelReadiness;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -37,6 +38,39 @@ class ValveModelController extends Controller
             'tenant' => tenancy()->tenant,
             'valveCategories' => ValveCategory::cases(),
             'valveTypes' => ValveType::cases(),
+        ]);
+    }
+
+    public function show(int $valveModel): View
+    {
+        $valveModel = ValveModel::with([
+            'dimensions' => fn (HasMany $query) => $query
+                ->orderBy('size_inch')
+                ->orderBy('pressure_class')
+                ->orderBy('end_connection'),
+            'bomTemplates' => fn (HasMany $query) => $query
+                ->with('standardMaterial')
+                ->orderBy('part_number'),
+        ])->findOrFail($valveModel);
+
+        $optionalMaterialIds = $valveModel->bomTemplates
+            ->flatMap(fn (ValveBomTemplate $bom): array => (array) $bom->optional_material_ids)
+            ->map(fn (mixed $id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        return view('tenant.valve-models.show', [
+            'valveModel' => $valveModel,
+            'user' => Auth::guard('web')->user(),
+            'tenant' => tenancy()->tenant,
+            'optionalMaterials' => Material::whereIn('id', $optionalMaterialIds)->get()->keyBy('id'),
+            'schematicUrl' => filled($valveModel->schematic_image_path)
+                ? route('tenant.media', [
+                    'category' => 'schematics',
+                    'path' => basename($valveModel->schematic_image_path),
+                ])
+                : null,
         ]);
     }
 

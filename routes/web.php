@@ -90,12 +90,13 @@ Route::middleware(['auth:web', 'tenant.initialize'])->group(function () {
         ])
             ->names([
                 'index' => 'tenant.valve-models.index',
+                'show' => 'tenant.valve-models.show',
                 'create' => 'tenant.valve-models.create',
                 'store' => 'tenant.valve-models.store',
                 'edit' => 'tenant.valve-models.edit',
                 'update' => 'tenant.valve-models.update',
             ])
-            ->except(['show', 'destroy']);
+            ->except(['destroy']);
         Route::prefix('valve-models/{valveModel}')->name('tenant.valve-models.')->group(function () {
             Route::get('/dimensions', [ValveDimensionController::class, 'index'])->name('dimensions.index');
             Route::post('/dimensions', [ValveDimensionController::class, 'store'])->name('dimensions.store');

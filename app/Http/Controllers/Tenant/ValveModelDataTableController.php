@@ -61,6 +61,7 @@ class ValveModelDataTableController extends Controller
                 'testing_standard' => $model->testing_standard,
                 'is_active' => $model->is_active,
                 'readiness_missing' => $readiness->missingRequirements($model),
+                'show_url' => route('tenant.valve-models.show', $model),
                 'edit_url' => route('tenant.valve-models.edit', $model),
             ]),
         ]);

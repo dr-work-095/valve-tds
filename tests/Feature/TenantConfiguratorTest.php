@@ -104,6 +104,9 @@ class TenantConfiguratorTest extends TestCase
         $this->assertSame(1, ValveModel::where('name', 'Sample Globe Control Valve - FCV-204')->count());
         $this->assertSame(1, $model->dimensions()->count());
         $this->assertSame(8, $model->bomTemplates()->count());
+        $bodyBom = $model->bomTemplates()->where('part_number', 10)->firstOrFail();
+        $this->assertSame('Body / Bonnet', $bodyBom->component_group);
+        $this->assertSame('Pressure-Retaining Castings', $bodyBom->part_name);
         $this->assertSame('Control / Modulating', $snapshot['model']['valve_category']);
         $this->assertSame('Globe', $snapshot['model']['valve_type']);
         $this->assertSame('PRJ-409-UNIT2', $snapshot['project_reference']);
@@ -444,6 +447,31 @@ class TenantConfiguratorTest extends TestCase
         $this->assertSame(0, GeneratedDatasheet::count());
         $this->assertSame(0, Queue::pushed(GenerateDatasheetPdfJob::class)->count());
         tenancy()->end();
+    }
+
+    public function test_datasheet_editor_displays_one_input_for_equivalent_bom_labels(): void
+    {
+        [$tenant, $sales] = $this->createTenantUser('sales');
+        $this->prepareTenantDatabase($tenant);
+        [$model, $dimension, $bom] = $this->createReadyModel($tenant);
+        tenancy()->initialize($tenant);
+        $bom->update(['part_name' => 'Body & Bonnet']);
+        tenancy()->end();
+
+        $response = $this->actingAs($sales, 'web')->post(route('tenant.datasheets.prepare'), [
+            'client_name' => 'Duplicate Label Client',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+        ]);
+        $draftId = basename((string) parse_url((string) $response->headers->get('Location'), PHP_URL_PATH));
+
+        $this->actingAs($sales, 'web')
+            ->get(route('tenant.datasheets.editor', $draftId))
+            ->assertOk()
+            ->assertSee('type="text" name="snapshot_edits[bom][0][component_group]"', false)
+            ->assertSee('value="Body / Bonnet"', false)
+            ->assertSee('type="hidden" name="snapshot_edits[bom][0][part_name]"', false)
+            ->assertSee('value="Body &amp; Bonnet"', false);
     }
 
     public function test_datasheet_editor_persists_edits_only_in_snapshot(): void

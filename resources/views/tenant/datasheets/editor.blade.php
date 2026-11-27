@@ -26,9 +26,12 @@
         $currentValue = old($section.'.'.$path, $value);
         $ariaLabel = \Illuminate\Support\Str::headline(str_replace('.', ' ', $path));
         $step = $type === 'number' ? ' step="any"' : '';
+        $attributes = $type === 'hidden'
+            ? ''
+            : ' aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"';
 
         return new \Illuminate\Support\HtmlString(
-            '<input type="'.e($type).'" name="'.e($name).'" value="'.e($currentValue).'" aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"'.$step.'>',
+            '<input type="'.e($type).'" name="'.e($name).'" value="'.e($currentValue).'"'.$step.$attributes.'>',
         );
     };
     $topInput = fn (string $name, mixed $value = null, string $classes = ''): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
@@ -36,6 +39,11 @@
     );
     $snapshotInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('snapshot_edits', $path, $value, $type, $classes);
     $fieldInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('datasheet_fields', $path, $value, $type, $classes);
+    $normalizeBomLabel = fn (mixed $value): string => preg_replace(
+        '/[^a-z0-9]/',
+        '',
+        \Illuminate\Support\Str::lower((string) $value),
+    ) ?? '';
     $metricValue = fn (string $key, string $point) => data_get($process, $key.'.'.$point);
     $metricUnit = fn (string $key, string $default = '') => data_get($process, $key.'.units', $default);
     $nominalSizeParts = [];
@@ -266,8 +274,21 @@
                                         <tr>
                                             @foreach ($pair as $index => $row)
                                                 <td class="datasheet-label">
-                                                    {{ $snapshotInput('bom.'.$index.'.component_group', $row['component_group'] ?? '') }}<br>
-                                                    <span class="text-[9px]">{{ $snapshotInput('bom.'.$index.'.part_name', $row['part_name'] ?? '') }}</span>
+                                                    @php
+                                                        $groupPath = 'bom.'.$index.'.component_group';
+                                                        $partPath = 'bom.'.$index.'.part_name';
+                                                        $groupValue = old('snapshot_edits.'.$groupPath, $row['component_group'] ?? '');
+                                                        $partValue = old('snapshot_edits.'.$partPath, $row['part_name'] ?? '');
+                                                        $sameBomLabel = filled($groupValue)
+                                                            && $normalizeBomLabel($groupValue) === $normalizeBomLabel($partValue);
+                                                    @endphp
+                                                    @if ($sameBomLabel)
+                                                        {{ $snapshotInput($groupPath, $groupValue) }}
+                                                        {{ $snapshotInput($partPath, $partValue, 'hidden') }}
+                                                    @else
+                                                        {{ $snapshotInput($groupPath, $groupValue) }}<br>
+                                                        <span class="text-[9px]">{{ $snapshotInput($partPath, $partValue) }}</span>
+                                                    @endif
                                                 </td>
                                                 <td>
                                                     <div class="inline-fields">

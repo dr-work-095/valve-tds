@@ -99,7 +99,7 @@ class TenantSampleDatasheetSeeder extends Seeder
             $components = [
                 [
                     'part_number' => 10,
-                    'part_name' => 'Body & Bonnet',
+                    'part_name' => 'Pressure-Retaining Castings',
                     'component_group' => ValveComponentGroup::BodyBonnet->value,
                     'material_code' => 'SAMPLE-A216-WCB',
                     'material_name' => 'ASTM A216 Gr. WCB Cast Carbon Steel',

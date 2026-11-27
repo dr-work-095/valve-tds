@@ -53,6 +53,12 @@
 
                         const action = row.querySelectorAll('td')[6];
                         action.innerHTML = '';
+                        const viewLink = document.createElement('a');
+                        viewLink.className = 'inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900';
+                        viewLink.href = data.show_url;
+                        viewLink.textContent = 'View';
+                        action.appendChild(viewLink);
+
                         const link = document.createElement('a');
                         link.className = 'inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800';
                         link.href = data.edit_url;

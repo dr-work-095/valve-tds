@@ -43,10 +43,21 @@ class TenantCatalogTest extends TestCase
     {
         [$tenant, $sales] = $this->createTenantUser('sales');
         $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $model = ValveModel::create([
+            'name' => 'Private Gate',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'is_active' => true,
+        ]);
+        tenancy()->end();
 
         $this->actingAs($sales, 'web')->get(route('tenant.settings.edit'))->assertForbidden();
         $this->actingAs($sales, 'web')->get(route('tenant.materials.index'))->assertForbidden();
         $this->actingAs($sales, 'web')->get(route('tenant.valve-models.index'))->assertForbidden();
+        $this->actingAs($sales, 'web')->get(route('tenant.valve-models.show', $model))->assertForbidden();
     }
 
     public function test_company_admin_can_update_single_company_settings_record(): void
@@ -678,6 +689,90 @@ class TenantCatalogTest extends TestCase
             ->assertSee('Body / Bonnet')
             ->assertSee('Quantity per valve')
             ->assertSee('End-to-end');
+    }
+
+    public function test_admin_can_view_all_valve_details_without_edit_controls(): void
+    {
+        [$tenant, $admin] = $this->createTenantUser('admin');
+        $this->prepareTenantDatabase($tenant);
+        tenancy()->initialize($tenant);
+        $standardMaterial = Material::where('is_active', true)->firstOrFail();
+        $optionalMaterial = Material::create([
+            'code' => 'VIEW-316',
+            'name' => 'View Stainless Steel',
+            'category' => 'Trim/Stem',
+            'is_active' => true,
+        ]);
+        $model = ValveModel::create([
+            'name' => 'Gate <script>alert(1)</script>',
+            'valve_category' => 'Manual Isolation',
+            'valve_type' => 'Gate',
+            'design_standard' => 'API 600',
+            'testing_standard' => 'API 598',
+            'face_to_face_standard' => 'ASME B16.10',
+            'end_connection_standard' => 'ASME B16.5',
+            'flange_facing_finish' => 'Raised face',
+            'bonnet_cover_type' => 'Bolted bonnet',
+            'bore_port_configuration' => 'Full bore',
+            'flow_characteristic' => 'Linear',
+            'seat_leakage_class' => 'Class VI',
+            'schematic_image_path' => $tenant->tenant_uid.'/schematics/gate.png',
+            'custom_attributes' => ['trim_design' => 'Stainless trim'],
+            'is_active' => true,
+        ]);
+        $model->dimensions()->create([
+            'size_inch' => '4"',
+            'size_dn' => 'DN100',
+            'pressure_class' => 'Class 300',
+            'end_connection' => 'Flanged RF',
+            'face_to_face_mm' => 228.60,
+            'end_to_end_mm' => 250.00,
+            'flange_od_mm' => 254.00,
+            'center_to_top_mm' => 320.00,
+            'weight_kg' => 18.50,
+            'extra_dimensions' => ['line_size_dn' => 'DN100'],
+        ]);
+        $model->bomTemplates()->create([
+            'part_number' => 1,
+            'part_name' => 'Body',
+            'component_group' => 'Body / Bonnet',
+            'quantity_per_valve' => 1,
+            'unit' => 'ea',
+            'notes' => 'Pressure-containing component',
+            'standard_material_id' => $standardMaterial->id,
+            'optional_material_ids' => [$optionalMaterial->id],
+        ]);
+        tenancy()->end();
+
+        $this->actingAs($admin, 'web')
+            ->get(route('tenant.valve-models.show', $model))
+            ->assertOk()
+            ->assertSee('Valve details')
+            ->assertSee('API 600')
+            ->assertSee('ASME B16.10')
+            ->assertSee('Stainless trim')
+            ->assertSee('DN100')
+            ->assertSee('228.60 mm')
+            ->assertSee('18.50 kg')
+            ->assertSee('Body')
+            ->assertSee('Pressure-containing component')
+            ->assertSee('View Stainless Steel')
+            ->assertSee('gate.png')
+            ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)
+            ->assertDontSee('<script>alert(1)</script>', false)
+            ->assertDontSee('name="valve_category"', false)
+            ->assertDontSee('name="design_standard"', false)
+            ->assertDontSee('Save valve model')
+            ->assertSee(route('tenant.valve-models.edit', $model), false);
+
+        $this->actingAs($admin, 'web')
+            ->get(route('tenant.valve-models.data', ['start' => 0, 'length' => 10]))
+            ->assertOk()
+            ->assertJsonPath('data.0.show_url', route('tenant.valve-models.show', $model));
+
+        $this->actingAs($admin, 'web')
+            ->get(route('tenant.valve-models.show', 999999))
+            ->assertNotFound();
     }
 
     private function createTenantUser(string $role): array
