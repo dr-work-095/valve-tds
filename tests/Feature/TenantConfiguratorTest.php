@@ -2,6 +2,7 @@
 
 use App\Enums\DatasheetAccessory;
 use App\Enums\DatasheetCompliance;
+use App\Enums\FireSafeTestStandard;
 use App\Jobs\GenerateDatasheetPdfJob;
 use App\Models\GeneratedDatasheet;
 use App\Models\Material;
@@ -235,9 +236,12 @@ class TenantConfiguratorTest extends TestCase
                     'mounted_accessories' => [DatasheetAccessory::SmartPositioner->value],
                 ],
                 'testing_compliance' => [
-                    'hydrostatic_seat_test_standard' => 'ASME B16.34 / ANSI FCI 70-2',
+                    'shell_test_standard' => 'ASME B16.34',
+                    'seat_test_standard' => 'ANSI FCI 70-2',
                     'material_certification' => 'EN 10204 Type 3.1',
                     'ndt_requirements' => '100% RT on butt welds / PMI',
+                    'fire_safe_test_standard' => FireSafeTestStandard::Other->value,
+                    'fire_safe_test_standard_other' => 'Customer fire-test specification FS-12',
                     'special_compliance' => [DatasheetCompliance::Iso15848->value],
                     'other_compliance' => '',
                 ],
@@ -268,6 +272,10 @@ class TenantConfiguratorTest extends TestCase
         $this->assertSame('<script>alert(1)</script>', $snapshot['bom'][0]['notes']);
         $this->assertSame('ASTM A216 WCB', $snapshot['bom'][0]['material_code']);
         $this->assertSame([DatasheetAccessory::SmartPositioner->value], $snapshot['datasheet_fields']['actuation']['mounted_accessories']);
+        $this->assertSame('ASME B16.34', $snapshot['datasheet_fields']['testing_compliance']['shell_test_standard']);
+        $this->assertSame('ANSI FCI 70-2', $snapshot['datasheet_fields']['testing_compliance']['seat_test_standard']);
+        $this->assertSame(FireSafeTestStandard::Other->value, $snapshot['datasheet_fields']['testing_compliance']['fire_safe_test_standard']);
+        $this->assertSame('Customer fire-test specification FS-12', $snapshot['datasheet_fields']['testing_compliance']['fire_safe_test_standard_other']);
         $this->assertSame([DatasheetCompliance::Iso15848->value], $snapshot['datasheet_fields']['testing_compliance']['special_compliance']);
         $this->assertSame('Gate', $snapshot['model']['valve_type']);
 
@@ -286,19 +294,47 @@ class TenantConfiguratorTest extends TestCase
         $this->assertStringContainsString('Shut-off: 45', $pdfHtml);
         $this->assertStringContainsString('Equal Percentage', $pdfHtml);
         $this->assertStringContainsString('Bolted bonnet', $pdfHtml);
+        $this->assertStringContainsString('Shell / Body Test Standard', $pdfHtml);
+        $this->assertStringContainsString('Seat / Closure Test Standard', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Fire-safe Test Standard</td><td>Other: Customer fire-test specification FS-12</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('ASME B16.34', $pdfHtml);
+        $this->assertStringContainsString('ANSI FCI 70-2', $pdfHtml);
         $this->assertStringContainsString('CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)', $pdfHtml);
-        $this->assertStringContainsString('Qty: 1.000 ea', $pdfHtml);
-        $this->assertStringContainsString('Body &amp; Bonnet', $pdfHtml);
-        $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $pdfHtml);
+        $this->assertStringContainsString('S. No.', $pdfHtml);
+        $this->assertStringContainsString('Part name', $pdfHtml);
+        $this->assertStringContainsString('Material details', $pdfHtml);
+        $this->assertStringContainsString('Qty / Unit', $pdfHtml);
+        $this->assertStringContainsString('<td class="center">1</td>', $pdfHtml);
+        $this->assertStringContainsString('<td class="label">Body</td>', $pdfHtml);
+        $this->assertStringContainsString('1.000 ea', $pdfHtml);
+        $this->assertStringNotContainsString('Body &amp; Bonnet', $pdfHtml);
+        $this->assertStringNotContainsString('alert(1)', $pdfHtml);
         $this->assertStringNotContainsString('<script>alert(1)</script>', $pdfHtml);
         $this->assertStringContainsString('Smart Positioner (4-20 mA HART)', $pdfHtml);
         $this->assertStringContainsString('□ Limit Switches', $pdfHtml);
-        $this->assertStringContainsString('□ NACE MR0175 (Sour Service)', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">NACE MR0175 (Sour Service)</td><td>NIL</td></tr>', $pdfHtml);
+        $this->assertStringNotContainsString('API 607 (Fire Safe)</td><td>NIL', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">ISO 15848-1 (Fugitive Emissions)</td><td>Applicable</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">SIL Certified</td><td>NIL</td></tr>', $pdfHtml);
+        $this->assertStringNotContainsString('□ NACE MR0175', $pdfHtml);
         $this->assertStringContainsString('<td class="center">0</td>', $pdfHtml);
         $this->assertStringContainsString('Page 1 of 2', $pdfHtml);
         $this->assertStringContainsString('Page 2 of 2', $pdfHtml);
         $this->assertStringNotContainsString('Selected Dimension Measurements', $pdfHtml);
         $this->assertStringContainsString('R. Patel', $pdfHtml);
+
+        $legacySnapshot = $snapshot;
+        unset(
+            $legacySnapshot['datasheet_fields']['testing_compliance']['fire_safe_test_standard'],
+            $legacySnapshot['datasheet_fields']['testing_compliance']['fire_safe_test_standard_other'],
+        );
+        $legacySnapshot['datasheet_fields']['testing_compliance']['special_compliance'][] = FireSafeTestStandard::LEGACY_SPECIAL_COMPLIANCE_VALUE;
+        $legacyPdfHtml = view('tenant.datasheets.pdf', [
+            'datasheet' => $original,
+            'snapshot' => $legacySnapshot,
+        ])->render();
+        $this->assertStringContainsString('<tr><td class="label">Fire-safe Test Standard</td><td>API 607</td></tr>', $legacyPdfHtml);
+
         $model->update(['name' => 'Renamed Model']);
         $bom->update(['part_name' => 'Renamed Part']);
         tenancy()->end();
@@ -389,6 +425,28 @@ class TenantConfiguratorTest extends TestCase
         ]);
     }
 
+    public function test_datasheet_requires_a_custom_fire_safe_standard_when_other_is_selected(): void
+    {
+        [$tenant, $sales] = $this->createTenantUser('sales');
+        $this->prepareTenantDatabase($tenant);
+        [$model, $dimension, $bom] = $this->createReadyModel($tenant);
+
+        $this->actingAs($sales, 'web')->post(route('tenant.datasheets.store'), [
+            'client_name' => 'Custom Fire-safe Standard',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+            'bom_materials' => [[
+                'bom_template_id' => $bom->id,
+                'material_id' => $bom->standard_material_id,
+            ]],
+            'datasheet_fields' => [
+                'testing_compliance' => [
+                    'fire_safe_test_standard' => FireSafeTestStandard::Other->value,
+                ],
+            ],
+        ])->assertSessionHasErrors('datasheet_fields.testing_compliance.fire_safe_test_standard_other');
+    }
+
     public function test_new_datasheet_uses_compact_setup_and_opens_editor_without_creating_a_record(): void
     {
         Queue::fake();
@@ -427,10 +485,28 @@ class TenantConfiguratorTest extends TestCase
             ->assertSee('value="Gate Ready"', false)
             ->assertSee('name="datasheet_fields[mechanical][nominal_size]"', false)
             ->assertSee('value="(4&quot;) Body"', false)
+            ->assertSee('name="datasheet_fields[testing_compliance][shell_test_standard]"', false)
+            ->assertSee('name="datasheet_fields[testing_compliance][seat_test_standard]"', false)
+            ->assertSee('name="datasheet_fields[testing_compliance][fire_safe_test_standard]"', false)
+            ->assertSee('value="API 607"', false)
+            ->assertSee('value="API 6FA"', false)
+            ->assertSee('value="ISO 10497"', false)
+            ->assertSee('value="Other"', false)
+            ->assertSee('name="datasheet_fields[testing_compliance][fire_safe_test_standard_other]"', false)
+            ->assertDontSee('name="datasheet_fields[testing_compliance][hydrostatic_seat_test_standard]"', false)
             ->assertDontSee('name="snapshot_edits[dimension][size_dn]"', false)
             ->assertDontSee('name="snapshot_edits[dimension][size_inch]"', false)
             ->assertDontSee('name="datasheet_fields[mechanical][line_size]"', false)
             ->assertSee('name="snapshot_edits[bom][0][part_name]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][component_group]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][notes]"', false)
+            ->assertSee('name="snapshot_edits[bom][0][quantity_and_unit]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][quantity_per_valve]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][unit]"', false)
+            ->assertSee('>S. No.</td>', false)
+            ->assertSee('>Part name</td>', false)
+            ->assertSee('>Material details</td>', false)
+            ->assertSee('>Qty / Unit</td>', false)
             ->assertSee('name="datasheet_fields[process_conditions][flow_rate][minimum]"', false)
             ->assertSee('name="client_name"', false)
             ->assertSee('Create datasheet');
@@ -449,7 +525,7 @@ class TenantConfiguratorTest extends TestCase
         tenancy()->end();
     }
 
-    public function test_datasheet_editor_displays_one_input_for_equivalent_bom_labels(): void
+    public function test_datasheet_editor_displays_bom_serial_number_and_combined_quantity_unit(): void
     {
         [$tenant, $sales] = $this->createTenantUser('sales');
         $this->prepareTenantDatabase($tenant);
@@ -468,10 +544,17 @@ class TenantConfiguratorTest extends TestCase
         $this->actingAs($sales, 'web')
             ->get(route('tenant.datasheets.editor', $draftId))
             ->assertOk()
-            ->assertSee('type="text" name="snapshot_edits[bom][0][component_group]"', false)
-            ->assertSee('value="Body / Bonnet"', false)
-            ->assertSee('type="hidden" name="snapshot_edits[bom][0][part_name]"', false)
-            ->assertSee('value="Body &amp; Bonnet"', false);
+            ->assertSee('type="text" name="snapshot_edits[bom][0][part_name]"', false)
+            ->assertSee('value="Body &amp; Bonnet"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][component_group]"', false)
+            ->assertSee('name="snapshot_edits[bom][0][quantity_and_unit]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][quantity_per_valve]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][unit]"', false)
+            ->assertSee('>S. No.</td>', false)
+            ->assertSee('<td class="text-center">1</td>', false)
+            ->assertSee('>Qty / Unit</td>', false)
+            ->assertDontSee('>Quantity</td>', false)
+            ->assertDontSee('>Unit</td>', false);
     }
 
     public function test_datasheet_editor_persists_edits_only_in_snapshot(): void
@@ -517,12 +600,10 @@ class TenantConfiguratorTest extends TestCase
                 ],
                 'bom' => [
                     [
-                        'component_group' => 'Project Body Group',
                         'part_name' => 'Project Body',
                         'material_code' => 'PROJECT-WCB',
                         'material_name' => 'Project Carbon Steel',
-                        'quantity_per_valve' => 2,
-                        'unit' => 'set',
+                        'quantity_and_unit' => '2 set',
                         'notes' => 'Project-specific BOM note',
                     ],
                 ],
@@ -546,7 +627,8 @@ class TenantConfiguratorTest extends TestCase
                     'predicted_noise' => '72 dBA',
                 ],
                 'testing_compliance' => [
-                    'hydrostatic_seat_test_standard' => '',
+                    'shell_test_standard' => '',
+                    'seat_test_standard' => '',
                     'seat_leakage_class' => '',
                 ],
             ],
@@ -561,11 +643,15 @@ class TenantConfiguratorTest extends TestCase
         $this->assertSame('Control / Modulating', $snapshot['model']['valve_category']);
         $this->assertSame('6"', $snapshot['dimension']['size_inch']);
         $this->assertSame('DN150 (6") Body / 4" Line', $snapshot['datasheet_fields']['mechanical']['nominal_size']);
+        $this->assertSame('Body / Bonnet', $snapshot['bom'][0]['component_group']);
         $this->assertSame('Project Body', $snapshot['bom'][0]['part_name']);
         $this->assertSame('PROJECT-WCB', $snapshot['bom'][0]['material_code']);
+        $this->assertSame('2', $snapshot['bom'][0]['quantity_per_valve']);
+        $this->assertSame('set', $snapshot['bom'][0]['unit']);
         $this->assertSame('Liquid, clean water', $snapshot['datasheet_fields']['process_conditions']['fluid_phase_state']);
         $this->assertSame('72 dBA', $snapshot['datasheet_fields']['control_performance']['predicted_noise']);
-        $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['hydrostatic_seat_test_standard']);
+        $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['shell_test_standard']);
+        $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['seat_test_standard']);
         $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['seat_leakage_class']);
         $this->assertSame('Gate Ready', ValveModel::findOrFail($model->id)->name);
         $this->assertSame('4"', ValveDimension::findOrFail($dimension->id)->size_inch);
@@ -575,6 +661,8 @@ class TenantConfiguratorTest extends TestCase
             'snapshot' => $snapshot,
         ])->render();
         $this->assertStringContainsString('DN150 (6&quot;) Body / 4&quot; Line', $pdfHtml);
+        $this->assertStringContainsString('<td class="label">Project Body</td>', $pdfHtml);
+        $this->assertStringContainsString('2 set', $pdfHtml);
         $this->assertStringNotContainsString('API 598', $pdfHtml);
         $this->assertStringNotContainsString('ANSI Class V', $pdfHtml);
         $this->assertSame(1, Queue::pushed(

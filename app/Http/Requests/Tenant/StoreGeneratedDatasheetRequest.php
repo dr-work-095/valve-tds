@@ -4,6 +4,7 @@ namespace App\Http\Requests\Tenant;
 
 use App\Enums\DatasheetAccessory;
 use App\Enums\DatasheetCompliance;
+use App\Enums\FireSafeTestStandard;
 use App\Enums\ValveCategory;
 use App\Enums\ValveType;
 use App\Models\ValveModel;
@@ -16,20 +17,47 @@ class StoreGeneratedDatasheetRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
+        $merge = [];
         $draft = $this->input('draft_id');
-        if (! is_string($draft) || ! Str::isUuid($draft)) {
-            return;
+        if (is_string($draft) && Str::isUuid($draft)) {
+            $selection = session()->get('tenant_datasheet_drafts.'.$draft);
+            if (is_array($selection)) {
+                $merge['valve_model_id'] = $selection['valve_model_id'];
+                $merge['dimension_id'] = $selection['dimension_id'];
+            }
         }
 
-        $selection = session()->get('tenant_datasheet_drafts.'.$draft);
-        if (! is_array($selection)) {
-            return;
+        $snapshotEdits = $this->input('snapshot_edits');
+        if (is_array($snapshotEdits) && is_array($snapshotEdits['bom'] ?? null)) {
+            foreach ($snapshotEdits['bom'] as $index => $bomEdit) {
+                if (! is_array($bomEdit) || ! array_key_exists('quantity_and_unit', $bomEdit)) {
+                    continue;
+                }
+
+                $quantityAndUnit = $bomEdit['quantity_and_unit'];
+                unset($bomEdit['quantity_and_unit']);
+
+                if ($quantityAndUnit === null || $quantityAndUnit === '') {
+                    $bomEdit['quantity_per_valve'] = $quantityAndUnit;
+                    $bomEdit['unit'] = $quantityAndUnit;
+                } elseif (is_string($quantityAndUnit)
+                    && preg_match('/^\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s+(.+?)\s*$/u', $quantityAndUnit, $matches) === 1) {
+                    $bomEdit['quantity_per_valve'] = $matches[1];
+                    $bomEdit['unit'] = trim($matches[2]);
+                } else {
+                    $bomEdit['quantity_per_valve'] = $quantityAndUnit;
+                    $bomEdit['unit'] = null;
+                }
+
+                $snapshotEdits['bom'][$index] = $bomEdit;
+            }
+
+            $merge['snapshot_edits'] = $snapshotEdits;
         }
 
-        $this->merge([
-            'valve_model_id' => $selection['valve_model_id'],
-            'dimension_id' => $selection['dimension_id'],
-        ]);
+        if ($merge !== []) {
+            $this->merge($merge);
+        }
     }
 
     /**
@@ -173,11 +201,15 @@ class StoreGeneratedDatasheetRequest extends FormRequest
             'datasheet_fields.actuation.stroking_time' => ['nullable', 'string', 'max:100'],
             'datasheet_fields.actuation.mounted_accessories' => ['nullable', 'array'],
             'datasheet_fields.actuation.mounted_accessories.*' => ['required', Rule::enum(DatasheetAccessory::class)],
-            'datasheet_fields.testing_compliance' => ['nullable', 'array:hydrostatic_seat_test_standard,seat_leakage_class,material_certification,ndt_requirements,special_compliance,other_compliance'],
+            'datasheet_fields.testing_compliance' => ['nullable', 'array:shell_test_standard,seat_test_standard,hydrostatic_seat_test_standard,seat_leakage_class,material_certification,ndt_requirements,fire_safe_test_standard,fire_safe_test_standard_other,special_compliance,other_compliance'],
+            'datasheet_fields.testing_compliance.shell_test_standard' => ['nullable', 'string', 'max:255'],
+            'datasheet_fields.testing_compliance.seat_test_standard' => ['nullable', 'string', 'max:255'],
             'datasheet_fields.testing_compliance.hydrostatic_seat_test_standard' => ['nullable', 'string', 'max:255'],
             'datasheet_fields.testing_compliance.seat_leakage_class' => ['nullable', 'string', 'max:100'],
             'datasheet_fields.testing_compliance.material_certification' => ['nullable', 'string', 'max:100'],
             'datasheet_fields.testing_compliance.ndt_requirements' => ['nullable', 'string', 'max:500'],
+            'datasheet_fields.testing_compliance.fire_safe_test_standard' => ['nullable', Rule::enum(FireSafeTestStandard::class)],
+            'datasheet_fields.testing_compliance.fire_safe_test_standard_other' => ['exclude_unless:datasheet_fields.testing_compliance.fire_safe_test_standard,Other', 'required', 'string', 'max:255'],
             'datasheet_fields.testing_compliance.special_compliance' => ['nullable', 'array'],
             'datasheet_fields.testing_compliance.special_compliance.*' => ['required', Rule::enum(DatasheetCompliance::class)],
             'datasheet_fields.testing_compliance.other_compliance' => ['nullable', 'string', 'max:500'],

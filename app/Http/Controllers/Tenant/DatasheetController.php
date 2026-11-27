@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Enums\DatasheetAccessory;
 use App\Enums\DatasheetCompliance;
+use App\Enums\FireSafeTestStandard;
 use App\Enums\ValveCategory;
 use App\Enums\ValveType;
 use App\Http\Controllers\Controller;
@@ -117,7 +118,8 @@ class DatasheetController extends Controller
             'control_performance' => [],
             'actuation' => [],
             'testing_compliance' => [
-                'hydrostatic_seat_test_standard' => $model->testing_standard,
+                'shell_test_standard' => $model->testing_standard,
+                'seat_test_standard' => $model->testing_standard,
                 'seat_leakage_class' => $model->seat_leakage_class,
             ],
             'revision' => [
@@ -146,6 +148,7 @@ class DatasheetController extends Controller
             'bomSelections' => $bomMaterials,
             'accessories' => DatasheetAccessory::cases(),
             'complianceOptions' => DatasheetCompliance::cases(),
+            'fireSafeTestStandards' => FireSafeTestStandard::cases(),
             'valveCategories' => ValveCategory::cases(),
             'valveTypes' => ValveType::cases(),
             'revisionDate' => now()->toDateString(),

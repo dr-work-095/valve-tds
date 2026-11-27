@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\DatasheetAccessory;
 use App\Enums\DatasheetCompliance;
+use App\Enums\FireSafeTestStandard;
 use App\Enums\ValveComponentGroup;
 use App\Jobs\GenerateDatasheetPdfJob;
 use App\Models\GeneratedDatasheet;
@@ -326,13 +327,14 @@ class TenantSampleDatasheetSeeder extends Seeder
                         ],
                     ],
                     'testing_compliance' => [
-                        'hydrostatic_seat_test_standard' => 'ASME B16.34 / ANSI FCI 70-2',
+                        'shell_test_standard' => 'ASME B16.34',
+                        'seat_test_standard' => 'ANSI FCI 70-2',
                         'seat_leakage_class' => 'ANSI Class V (Metal Seated)',
                         'material_certification' => 'EN 10204 Type 3.1',
                         'ndt_requirements' => '100% RT on Butt Welds / PMI',
+                        'fire_safe_test_standard' => FireSafeTestStandard::Api607->value,
                         'special_compliance' => [
                             DatasheetCompliance::NaceMr0175->value,
-                            DatasheetCompliance::Api607->value,
                             DatasheetCompliance::Iso15848->value,
                         ],
                         'other_compliance' => 'Confirm applicability of SIL certification during project engineering.',

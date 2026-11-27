@@ -13,9 +13,21 @@
     $revision = $fields['revision'] ?? [];
     $accessories = $actuation['mounted_accessories'] ?? [];
     $compliance = $testing['special_compliance'] ?? [];
-    $hydrostaticTestStandard = array_key_exists('hydrostatic_seat_test_standard', $testing)
-        ? $testing['hydrostatic_seat_test_standard']
-        : ($model['testing_standard'] ?? null);
+    $legacyFireSafeSelected = is_array($compliance)
+        && in_array(\App\Enums\FireSafeTestStandard::LEGACY_SPECIAL_COMPLIANCE_VALUE, $compliance, true);
+    $fireSafeTestStandard = array_key_exists('fire_safe_test_standard', $testing)
+        ? $testing['fire_safe_test_standard']
+        : ($legacyFireSafeSelected ? \App\Enums\FireSafeTestStandard::Api607->value : null);
+    $fireSafeOtherStandard = $testing['fire_safe_test_standard_other'] ?? null;
+    $fireSafeTestStandardDisplay = $fireSafeTestStandard === \App\Enums\FireSafeTestStandard::Other->value
+        ? 'Other'.(filled($fireSafeOtherStandard) ? ': '.$fireSafeOtherStandard : '')
+        : $fireSafeTestStandard;
+    $shellTestStandard = array_key_exists('shell_test_standard', $testing)
+        ? $testing['shell_test_standard']
+        : ($testing['hydrostatic_seat_test_standard'] ?? $model['testing_standard'] ?? null);
+    $seatTestStandard = array_key_exists('seat_test_standard', $testing)
+        ? $testing['seat_test_standard']
+        : ($testing['hydrostatic_seat_test_standard'] ?? $model['testing_standard'] ?? null);
     $seatLeakageClass = array_key_exists('seat_leakage_class', $testing)
         ? $testing['seat_leakage_class']
         : ($model['seat_leakage_class'] ?? null);
@@ -57,13 +69,7 @@
         \App\Enums\DatasheetCompliance::cases(),
     );
     $accessoryRows = array_chunk($accessoryOptions, 3);
-    $complianceRows = array_chunk($complianceOptions, 2);
-    $bomGroupLabels = [
-        'Body / Bonnet' => 'Body & Bonnet',
-        'Trim (API Trim No.)' => 'Trim / API Trim No.',
-    ];
     $revisionNumber = preg_replace('/^Rev\s*/i', '', (string) $datasheet->revision) ?? $datasheet->revision;
-    $bomRows = array_chunk($bom, 2);
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -169,16 +175,15 @@
     </table>
 
     <table class="data">
-        <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+        <colgroup><col style="width:8%"><col style="width:22%"><col style="width:52%"><col style="width:18%"></colgroup>
         <tr class="section-title"><th colspan="4">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
-        @forelse ($bomRows as $pair)
+        <tr class="subhead"><td>S. No.</td><td>Part name</td><td>Material details</td><td>Qty / Unit</td></tr>
+        @forelse ($bom as $row)
             <tr>
-                @foreach ($pair as $row)
-                    <td class="label">{{ $bomGroupLabels[$row['component_group'] ?? ''] ?? ($row['component_group'] ?? $row['part_name']) }}<br><span class="small">{{ $row['part_name'] }}</span></td><td>{{ $row['material_code'] }} — {{ $row['material_name'] }}<br><span class="small">Qty: {{ $row['quantity_per_valve'] ?? 1 }} {{ $row['unit'] ?? 'ea' }}@if (filled($row['notes'] ?? null)) — {{ $row['notes'] }}@endif</span></td>
-                @endforeach
-                @if (count($pair) === 1)
-                    <td></td><td></td>
-                @endif
+                <td class="center">{{ $loop->iteration }}</td>
+                <td class="label">{{ $row['part_name'] }}</td>
+                <td>{{ $row['material_code'] }} — {{ $row['material_name'] }}</td>
+                <td class="center">{{ $row['quantity_per_valve'] ?? 1 }} {{ $row['unit'] ?? 'ea' }}</td>
             </tr>
         @empty
             <tr><td colspan="4" class="center">No BOM materials configured</td></tr>
@@ -214,22 +219,19 @@
     </table>
 
     <table class="data">
-        <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
-        <tr class="section-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
-        <tr><td class="label">Hydrostatic / Seat Test Std.</td><td>{{ $valueOrDash($hydrostaticTestStandard) }}</td><td class="label">Seat Leakage Class</td><td>{{ $valueOrDash($seatLeakageClass) }}</td></tr>
-        <tr><td class="label">Material Certification</td><td>{{ $valueOrDash($testing['material_certification'] ?? null) }}</td><td class="label">NDT / NDE Requirements</td><td>{{ $valueOrDash($testing['ndt_requirements'] ?? null) }}</td></tr>
-        <tr><td class="label">Special Compliance</td><td colspan="3" class="checks">
-            @foreach ($complianceRows as $row)
-                @foreach ($row as $requirement)
-                    {{ in_array($requirement, $compliance, true) ? '■' : '□' }} {{ $requirement }}@if (! $loop->last)&nbsp;&nbsp;@endif
-                @endforeach
-                @if (! $loop->last)<br>@endif
-            @endforeach
-            @if (filled($testing['other_compliance'] ?? null))
-                <br>Other: {{ $testing['other_compliance'] }}
-            @endif
-        </td></tr>
-        <tr><td class="label">Notes / Vendor Remarks</td><td colspan="3">{{ $valueOrDash($snapshot['notes'] ?? null) }}</td></tr>
+        <colgroup><col style="width:42%"><col style="width:58%"></colgroup>
+        <tr class="section-title"><th colspan="2">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
+        <tr><td class="label">Shell / Body Test Standard</td><td>{{ $valueOrDash($shellTestStandard) }}</td></tr>
+        <tr><td class="label">Seat / Closure Test Standard</td><td>{{ $valueOrDash($seatTestStandard) }}</td></tr>
+        <tr><td class="label">Seat Leakage Class</td><td>{{ $valueOrDash($seatLeakageClass) }}</td></tr>
+        <tr><td class="label">Material Certification</td><td>{{ $valueOrDash($testing['material_certification'] ?? null) }}</td></tr>
+        <tr><td class="label">NDT / NDE Requirements</td><td>{{ $valueOrDash($testing['ndt_requirements'] ?? null) }}</td></tr>
+        <tr><td class="label">Fire-safe Test Standard</td><td>{{ $valueOrDash($fireSafeTestStandardDisplay) }}</td></tr>
+        @foreach ($complianceOptions as $requirement)
+            <tr><td class="label">{{ $requirement }}</td><td>{{ in_array($requirement, $compliance, true) ? 'Applicable' : 'NIL' }}</td></tr>
+        @endforeach
+        <tr><td class="label">Other Compliance</td><td>{{ $valueOrDash($testing['other_compliance'] ?? null) }}</td></tr>
+        <tr><td class="label">Notes / Vendor Remarks</td><td>{{ $valueOrDash($snapshot['notes'] ?? null) }}</td></tr>
     </table>
 
     <table class="data revision">

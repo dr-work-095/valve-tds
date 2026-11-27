@@ -10,11 +10,31 @@
     $performance = $fields['control_performance'] ?? [];
     $actuation = $fields['actuation'] ?? [];
     $testing = $fields['testing_compliance'] ?? [];
+    $shellTestStandard = array_key_exists('shell_test_standard', $testing)
+        ? $testing['shell_test_standard']
+        : ($testing['hydrostatic_seat_test_standard'] ?? $model['testing_standard'] ?? '');
+    $seatTestStandard = array_key_exists('seat_test_standard', $testing)
+        ? $testing['seat_test_standard']
+        : ($testing['hydrostatic_seat_test_standard'] ?? $model['testing_standard'] ?? '');
+    $storedCompliance = $testing['special_compliance'] ?? [];
+    $legacyFireSafeSelected = is_array($storedCompliance)
+        && in_array(\App\Enums\FireSafeTestStandard::LEGACY_SPECIAL_COMPLIANCE_VALUE, $storedCompliance, true);
+    $submittedCompliance = old('datasheet_fields.testing_compliance.special_compliance', $storedCompliance);
+    $compliance = is_array($submittedCompliance) ? $submittedCompliance : [];
+    $fireSafeTestStandard = old(
+        'datasheet_fields.testing_compliance.fire_safe_test_standard',
+        array_key_exists('fire_safe_test_standard', $testing)
+            ? $testing['fire_safe_test_standard']
+            : ($legacyFireSafeSelected ? \App\Enums\FireSafeTestStandard::Api607->value : ''),
+    );
+    $fireSafeTestStandardOther = old(
+        'datasheet_fields.testing_compliance.fire_safe_test_standard_other',
+        $testing['fire_safe_test_standard_other'] ?? '',
+    );
+    $fireSafeOtherSelected = $fireSafeTestStandard === \App\Enums\FireSafeTestStandard::Other->value;
     $revision = $fields['revision'] ?? [];
     $accessories = old('datasheet_fields.actuation.mounted_accessories', $actuation['mounted_accessories'] ?? []);
-    $compliance = old('datasheet_fields.testing_compliance.special_compliance', $testing['special_compliance'] ?? []);
     $category = old('snapshot_edits.model.valve_category', $model['valve_category'] ?? '');
-    $bomRows = array_chunk($bom, 2, true);
     $input = function (
         string $section,
         string $path,
@@ -26,12 +46,9 @@
         $currentValue = old($section.'.'.$path, $value);
         $ariaLabel = \Illuminate\Support\Str::headline(str_replace('.', ' ', $path));
         $step = $type === 'number' ? ' step="any"' : '';
-        $attributes = $type === 'hidden'
-            ? ''
-            : ' aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"';
 
         return new \Illuminate\Support\HtmlString(
-            '<input type="'.e($type).'" name="'.e($name).'" value="'.e($currentValue).'"'.$step.$attributes.'>',
+            '<input type="'.e($type).'" name="'.e($name).'" value="'.e($currentValue).'" aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"'.$step.'>',
         );
     };
     $topInput = fn (string $name, mixed $value = null, string $classes = ''): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
@@ -39,11 +56,6 @@
     );
     $snapshotInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('snapshot_edits', $path, $value, $type, $classes);
     $fieldInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('datasheet_fields', $path, $value, $type, $classes);
-    $normalizeBomLabel = fn (mixed $value): string => preg_replace(
-        '/[^a-z0-9]/',
-        '',
-        \Illuminate\Support\Str::lower((string) $value),
-    ) ?? '';
     $metricValue = fn (string $key, string $point) => data_get($process, $key.'.'.$point);
     $metricUnit = fn (string $key, string $default = '') => data_get($process, $key.'.units', $default);
     $nominalSizeParts = [];
@@ -268,45 +280,29 @@
                                 </table>
 
                                 <table class="datasheet-table">
-                                    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+                                    <colgroup><col style="width:8%"><col style="width:22%"><col style="width:52%"><col style="width:18%"></colgroup>
                                     <tr class="datasheet-title"><th colspan="4">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
-                                    @forelse ($bomRows as $pair)
+                                    <tr class="datasheet-subhead"><td>S. No.</td><td>Part name</td><td>Material details</td><td>Qty / Unit</td></tr>
+                                    @forelse ($bom as $index => $row)
                                         <tr>
-                                            @foreach ($pair as $index => $row)
-                                                <td class="datasheet-label">
-                                                    @php
-                                                        $groupPath = 'bom.'.$index.'.component_group';
-                                                        $partPath = 'bom.'.$index.'.part_name';
-                                                        $groupValue = old('snapshot_edits.'.$groupPath, $row['component_group'] ?? '');
-                                                        $partValue = old('snapshot_edits.'.$partPath, $row['part_name'] ?? '');
-                                                        $sameBomLabel = filled($groupValue)
-                                                            && $normalizeBomLabel($groupValue) === $normalizeBomLabel($partValue);
-                                                    @endphp
-                                                    @if ($sameBomLabel)
-                                                        {{ $snapshotInput($groupPath, $groupValue) }}
-                                                        {{ $snapshotInput($partPath, $partValue, 'hidden') }}
-                                                    @else
-                                                        {{ $snapshotInput($groupPath, $groupValue) }}<br>
-                                                        <span class="text-[9px]">{{ $snapshotInput($partPath, $partValue) }}</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div class="inline-fields">
-                                                        {{ $snapshotInput('bom.'.$index.'.material_code', $row['material_code'] ?? '', 'text', 'sheet-inline sheet-medium') }} —
-                                                        {{ $snapshotInput('bom.'.$index.'.material_name', $row['material_name'] ?? '', 'text', 'sheet-inline sheet-flex') }}
-                                                    </div>
-                                                    <span class="text-[9px]">
-                                                            <span class="inline-fields">
-                                                                Qty: {{ $snapshotInput('bom.'.$index.'.quantity_per_valve', $row['quantity_per_valve'] ?? 1, 'number', 'sheet-number sheet-inline') }}
-                                                                {{ $snapshotInput('bom.'.$index.'.unit', $row['unit'] ?? 'ea', 'text', 'sheet-unit sheet-inline') }}
-                                                                — {{ $snapshotInput('bom.'.$index.'.notes', $row['notes'] ?? '', 'text', 'sheet-inline sheet-flex') }}
-                                                            </span>
-                                                    </span>
-                                                </td>
-                                            @endforeach
-                                            @if (count($pair) === 1)
-                                                <td></td><td></td>
-                                            @endif
+                                            <td class="text-center">{{ $loop->iteration }}</td>
+                                            <td class="datasheet-label">{{ $snapshotInput('bom.'.$index.'.part_name', $row['part_name'] ?? '') }}</td>
+                                            <td>
+                                                <div class="inline-fields">
+                                                    {{ $snapshotInput('bom.'.$index.'.material_code', $row['material_code'] ?? '', 'text', 'sheet-inline sheet-medium') }} —
+                                                    {{ $snapshotInput('bom.'.$index.'.material_name', $row['material_name'] ?? '', 'text', 'sheet-inline sheet-flex') }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $quantity = old('snapshot_edits.bom.'.$index.'.quantity_per_valve', $row['quantity_per_valve'] ?? 1);
+                                                    $unit = old('snapshot_edits.bom.'.$index.'.unit', $row['unit'] ?? 'ea');
+                                                    $quantityAndUnit = trim((string) $quantity.' '.(string) $unit);
+                                                @endphp
+                                                <div class="inline-fields">
+                                                    {{ $snapshotInput('bom.'.$index.'.quantity_and_unit', $quantityAndUnit, 'text', 'sheet-inline sheet-flex') }}
+                                                </div>
+                                            </td>
                                         </tr>
                                     @empty
                                         <tr><td colspan="4" class="text-center">No BOM materials configured</td></tr>
@@ -371,15 +367,33 @@
                                 <table class="datasheet-table">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr class="datasheet-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
-                                    <tr><td class="datasheet-label">Hydrostatic / Seat Test Std.</td><td>{{ $fieldInput('testing_compliance.hydrostatic_seat_test_standard', $testing['hydrostatic_seat_test_standard'] ?? '') }}</td><td class="datasheet-label">Seat Leakage Class</td><td>{{ $fieldInput('testing_compliance.seat_leakage_class', $testing['seat_leakage_class'] ?? '') }}</td></tr>
-                                    <tr><td class="datasheet-label">Material Certification</td><td>{{ $fieldInput('testing_compliance.material_certification', $testing['material_certification'] ?? '') }}</td><td class="datasheet-label">NDT / NDE Requirements</td><td>{{ $fieldInput('testing_compliance.ndt_requirements', $testing['ndt_requirements'] ?? '') }}</td></tr>
+                                    <tr><td class="datasheet-label">Shell / Body Test Standard</td><td>{{ $fieldInput('testing_compliance.shell_test_standard', $shellTestStandard) }}</td><td class="datasheet-label">Seat / Closure Test Standard</td><td>{{ $fieldInput('testing_compliance.seat_test_standard', $seatTestStandard) }}</td></tr>
+                                    <tr><td class="datasheet-label">Seat Leakage Class</td><td>{{ $fieldInput('testing_compliance.seat_leakage_class', $testing['seat_leakage_class'] ?? '') }}</td><td class="datasheet-label">Material Certification</td><td>{{ $fieldInput('testing_compliance.material_certification', $testing['material_certification'] ?? '') }}</td></tr>
+                                    <tr><td class="datasheet-label">NDT / NDE Requirements</td><td colspan="3">{{ $fieldInput('testing_compliance.ndt_requirements', $testing['ndt_requirements'] ?? '') }}</td></tr>
+                                    <tr>
+                                        <td class="datasheet-label">Fire-safe Test Standard</td>
+                                        <td colspan="3">
+                                            <select id="fire-safe-test-standard" name="datasheet_fields[testing_compliance][fire_safe_test_standard]" aria-label="Fire-safe test standard" class="sheet-input">
+                                                <option value="">NIL / Not Required</option>
+                                                @foreach ($fireSafeTestStandards as $standard)
+                                                    <option value="{{ $standard->value }}" @selected($fireSafeTestStandard === $standard->value)>{{ $standard->value }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr id="fire-safe-test-standard-other-row" @if (! $fireSafeOtherSelected) hidden @endif>
+                                        <td class="datasheet-label">Specify Fire-safe Standard</td>
+                                        <td colspan="3">
+                                            <input id="fire-safe-test-standard-other" type="text" name="datasheet_fields[testing_compliance][fire_safe_test_standard_other]" value="{{ $fireSafeTestStandardOther }}" aria-label="Specify fire-safe test standard" class="sheet-input" @if ($fireSafeOtherSelected) required @else disabled @endif>
+                                        </td>
+                                    </tr>
                                     <tr>
                                         <td class="datasheet-label">Special Compliance</td>
                                         <td colspan="3">
                                             <div class="grid grid-cols-2 gap-x-3 gap-y-1">
                                                 @foreach ($complianceOptions as $requirement)
                                                     <label class="inline-flex items-center gap-1">
-                                                        <input type="checkbox" name="datasheet_fields[testing_compliance][special_compliance][]" value="{{ $requirement->value }}" @checked(in_array($requirement->value, old('datasheet_fields.testing_compliance.special_compliance', $testing['special_compliance'] ?? []), true))>
+                                                        <input type="checkbox" name="datasheet_fields[testing_compliance][special_compliance][]" value="{{ $requirement->value }}" @checked(in_array($requirement->value, $compliance, true))>
                                                         {{ $requirement->value }}
                                                     </label>
                                                 @endforeach
@@ -434,6 +448,20 @@
 
             categorySelect.addEventListener('change', updateControlPerformanceFields);
             updateControlPerformanceFields();
+
+            const fireSafeTestStandardSelect = document.getElementById('fire-safe-test-standard');
+            const fireSafeOtherStandardRow = document.getElementById('fire-safe-test-standard-other-row');
+            const fireSafeOtherStandardInput = document.getElementById('fire-safe-test-standard-other');
+
+            function updateFireSafeStandardFields() {
+                const isOther = fireSafeTestStandardSelect.value === 'Other';
+                fireSafeOtherStandardRow.hidden = !isOther;
+                fireSafeOtherStandardInput.disabled = !isOther;
+                fireSafeOtherStandardInput.required = isOther;
+            }
+
+            fireSafeTestStandardSelect.addEventListener('change', updateFireSafeStandardFields);
+            updateFireSafeStandardFields();
         </script>
     @endpush
 </x-layouts.dashboard>
