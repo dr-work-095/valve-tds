@@ -17,7 +17,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('tenant.datasheets.prepare') }}" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6">
+            <form method="POST" action="{{ route('tenant.datasheets.prepare') }}">
                 @csrf
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div class="sm:col-span-2">

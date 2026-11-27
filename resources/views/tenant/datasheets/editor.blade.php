@@ -78,7 +78,7 @@
     $revisionNumber = '0';
 @endphp
 
-<x-layouts.dashboard :page-title="'Edit datasheet'" :admin-mode="false" :tenant="$tenant" :user="$user">
+<x-layouts.dashboard :page-title="'Edit datasheet'" :admin-mode="false" :tenant="$tenant" :user="$user" :focus-editor="true">
     @push('styles')
         <style>
             .datasheet-scroll { overflow-x: auto; }
@@ -87,7 +87,7 @@
             .datasheet-table td, .datasheet-table th { border: 1px solid #344052; padding: 3px 4px; vertical-align: middle; overflow-wrap: anywhere; }
             .datasheet-title th { padding: 5px 6px; background: #202b3d; color: #fff; text-align: left; font-size: 11px; }
             .datasheet-label { background: #f7f8fa; color: #303b4c; font-weight: 600; }
-            .datasheet-subhead td { background: #f0f2f5; text-align: center; font-weight: 600; }
+            .datasheet-subhead td { background: #f0f2f5; color: #202938; text-align: center; font-weight: 600; }
             .sheet-input { display: inline-block; width: 100%; min-width: 0; border: 1px solid #cbd5e1; border-radius: 3px; background: #fff; padding: 2px 3px; color: #202938; font: inherit; line-height: 1.25; }
             .sheet-input:focus { border-color: #2563eb; outline: 2px solid rgb(37 99 235 / 20%); }
             .sheet-number { width: 2.5rem; text-align: center; }
@@ -101,9 +101,9 @@
             .sheet-input.sheet-unit { width: 3.5rem; }
             .sheet-input.sheet-flex { width: 1%; min-width: 2.5rem; flex: 1 1 auto; }
             .sheet-input.sheet-inline.sheet-flex { width: 1%; flex: 1 1 auto; }
-            .datasheet-page-card { max-width: 1100px; }
+            .datasheet-page-container { max-width: 1100px; }
             @media (max-width: 767px) {
-                .datasheet-page-card { padding: 10px; }
+                .datasheet-page-container { padding: 10px; }
                 .datasheet-page { min-width: 760px; }
             }
         </style>
@@ -132,7 +132,7 @@
                     <input type="hidden" name="bom_materials[{{ $index }}][material_id]" value="{{ $bomSelection['material_id'] }}">
                 @endforeach
 
-                <div class="sticky top-0 z-10 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-800/95">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Step 2 of 2</p>
                         <h1 class="text-lg font-semibold text-slate-900 dark:text-white">Review and edit datasheet</h1>
@@ -144,9 +144,9 @@
                 </div>
 
                 <div class="grid gap-5">
-                    <section class="datasheet-page-card rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-white sm:p-5">
+                    <section class="datasheet-page-container p-3 sm:p-5">
                         <div class="datasheet-scroll">
-                            <div class="datasheet-page text-[10px] leading-tight text-slate-800">
+                            <div class="datasheet-page text-[10px] leading-tight text-slate-800 dark:text-slate-100">
                                 <table class="datasheet-table">
                                     <tr>
                                         <td class="w-[55%]">
@@ -303,9 +303,9 @@
                         </div>
                     </section>
 
-                    <section class="datasheet-page-card rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-white sm:p-5">
+                    <section class="datasheet-page-container p-3 sm:p-5">
                         <div class="datasheet-scroll">
-                            <div class="datasheet-page text-[10px] leading-tight text-slate-800">
+                            <div class="datasheet-page text-[10px] leading-tight text-slate-800 dark:text-slate-100">
                                 <table id="control-performance-section" class="datasheet-table {{ $category === 'Control / Modulating' ? '' : 'hidden' }}">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr class="datasheet-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>

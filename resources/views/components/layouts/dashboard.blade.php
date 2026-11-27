@@ -1,3 +1,6 @@
+@php
+    $focusEditor = $focusEditor ?? false;
+@endphp
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -10,6 +13,7 @@
 </head>
 <body class="min-h-full font-sans text-slate-800 antialiased transition-colors dark:bg-slate-900 dark:text-slate-100">
     <div class="flex min-h-screen dark:bg-slate-900">
+    @unless ($focusEditor)
         <aside id="sidebar" class="sidebar flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-700/60 dark:bg-slate-800">
             <div class="brand-row flex h-16 items-center gap-3 border-b border-slate-200 px-5 dark:border-slate-700/60">
                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
@@ -90,8 +94,10 @@
                 </button>
             </div>
         </aside>
+        @endunless
 
         <div class="min-w-0 flex-1">
+            @unless ($focusEditor)
             <header class="flex h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 dark:border-slate-700/60 dark:bg-slate-800 sm:px-6 lg:px-8">
                 <div class="flex min-w-0 items-center gap-3">
                     <button id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 md:hidden">
@@ -117,14 +123,19 @@
                     </form>
                 </div>
             </header>
+            @endunless
 
             <main class="mx-auto">
                 {{ $slot }}
+                @unless ($focusEditor)
                 <footer class="py-6 text-center text-xs text-slate-400">ValveTDS · Technical documentation made simple</footer>
+                @endunless
             </main>
         </div>
     </div>
+    @unless ($focusEditor)
     <div id="mobileBackdrop" class="fixed inset-0 z-30 hidden bg-slate-900/20 md:hidden"></div>
+    @endunless
     @stack('scripts')
 </body>
 </html>
