@@ -46,19 +46,54 @@
         $name = $section.'['.str_replace('.', '][', $path).']';
         $currentValue = old($section.'.'.$path, $value);
         $ariaLabel = \Illuminate\Support\Str::headline(str_replace('.', ' ', $path));
-        $step = $type === 'number' ? ' step="any"' : '';
+        $inputType = $type === 'number' ? 'text' : $type;
+        $placeholderPath = preg_replace(
+            '/^(identification|process_conditions|mechanical|control_performance|quality_planning|actuation|testing_compliance|revision|snapshot_edits)\./',
+            '',
+            $path,
+        );
+        $placeholderPath = preg_replace('/^bom\.\d+\./', '', $placeholderPath);
+        $placeholderParts = explode('.', $placeholderPath);
+        $placeholderLeaf = array_pop($placeholderParts);
+        $placeholderLabel = match ($placeholderLeaf) {
+            'minimum' => 'Min',
+            'normal' => 'Normal',
+            'maximum' => 'Max',
+            default => \Illuminate\Support\Str::headline(implode(' ', [...$placeholderParts, $placeholderLeaf])),
+        };
+        if ($type === 'number' && $section === 'datasheet_fields' && str_starts_with($path, 'process_conditions.')) {
+            $parameterPath = preg_replace('/\.(minimum|normal|maximum)$/', '', $path);
+            $placeholderLabel = match ($parameterPath) {
+                'process_conditions.flow_rate' => 'Flow Rate',
+                'process_conditions.inlet_pressure' => 'Inlet Pressure',
+                'process_conditions.outlet_pressure' => 'Outlet Pressure',
+                'process_conditions.operating_temperature' => 'Operating Temperature',
+                'process_conditions.density' => 'Density',
+                'process_conditions.specific_gravity' => 'Specific Gravity',
+                'process_conditions.molecular_weight' => 'Molecular Weight',
+                'process_conditions.viscosity' => 'Viscosity',
+                'process_conditions.vapor_pressure' => 'Vapor Pressure',
+                default => $placeholderLabel,
+            };
+        }
+        $placeholder = match ($type) {
+            'number' => ' placeholder="'.e($placeholderLabel).'"',
+            'date' => '',
+            default => ' placeholder="'.e($placeholderLabel).'"',
+        };
         $isInvalid = $errors->has($section.'.'.$path);
         $invalidAttributes = $isInvalid ? ' aria-invalid="true"' : '';
 
         return new \Illuminate\Support\HtmlString(
-            '<input type="'.e($type).'" name="'.e($name).'" value="'.e($currentValue).'" aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"'.$invalidAttributes.$step.'>',
+            '<input type="'.e($inputType).'" name="'.e($name).'" value="'.e($currentValue).'" aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"'.$invalidAttributes.$placeholder.'>',
         );
     };
     $topInput = function (string $name, mixed $value = null, string $classes = '') use ($errors): \Illuminate\Support\HtmlString {
         $invalidAttributes = $errors->has($name) ? ' aria-invalid="true"' : '';
+        $placeholder = ' placeholder="'.e(\Illuminate\Support\Str::headline($name)).'"';
 
         return new \Illuminate\Support\HtmlString(
-            '<input type="text" name="'.e($name).'" value="'.e(old($name, $value)).'" aria-label="'.e(\Illuminate\Support\Str::headline($name)).'" class="sheet-input '.e($classes).'"'.$invalidAttributes.'>',
+            '<input type="text" name="'.e($name).'" value="'.e(old($name, $value)).'" aria-label="'.e(\Illuminate\Support\Str::headline($name)).'" class="sheet-input '.e($classes).'"'.$invalidAttributes.$placeholder.'>',
         );
     };
     $snapshotInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('snapshot_edits', $path, $value, $type, $classes);
@@ -94,7 +129,7 @@
             .datasheet-title th { padding: 5px 6px; background: #202b3d; color: #fff; text-align: left; font-size: 11px; }
             .datasheet-label { background: #f7f8fa; color: #303b4c; font-weight: 600; }
             .datasheet-subhead td { background: #f0f2f5; color: #202938; text-align: center; font-weight: 600; }
-            .sheet-input { display: inline-block; width: 100%; min-width: 0; border: 1px solid #94a3b8; border-radius: 3px; background: #fff; padding: 6px 8px; color: #202938; font: inherit; font-size: 14px; line-height: 1.35; min-height: 36px; }
+            .sheet-input { display: inline-block; width: 100%; min-width: 0; border: 1px solid #94a3b8; border-radius: 3px; background: #fff; padding: 4px 6px; color: #202938; font: inherit; font-size: 14px; }
             .sheet-input[aria-invalid="true"] { border-color: #dc2626; }
             .sheet-input:focus { border-color: #2563eb; outline: 2px solid rgb(37 99 235 / 20%); }
             .sheet-number { width: 2.5rem; text-align: center; }
@@ -125,6 +160,7 @@
             #datasheet-editor[data-mode="preview"] .sheet-input { min-height: 0; border-color: transparent; border-radius: 0; background: transparent; color: inherit; padding: 2px 3px; }
             #datasheet-editor[data-mode="preview"] select.sheet-input { appearance: none; }
             #datasheet-editor[data-mode="preview"] textarea.sheet-input { resize: none; }
+            #datasheet-editor[data-mode="preview"] .sheet-input::placeholder { color: transparent; }
             .datasheet-page-container { max-width: 1200px; }
             @media (max-width: 767px) {
                 .datasheet-page-container { padding: 10px; }
@@ -416,7 +452,7 @@
                                     <tr id="fire-safe-test-standard-other-row" @if (! $fireSafeOtherSelected) hidden @endif>
                                         <td class="datasheet-label">Specify Fire-safe Standard</td>
                                         <td colspan="3">
-                                            <input id="fire-safe-test-standard-other" type="text" name="datasheet_fields[testing_compliance][fire_safe_test_standard_other]" value="{{ $fireSafeTestStandardOther }}" aria-label="Specify fire-safe test standard" class="sheet-input" @if ($fireSafeOtherSelected) required @else disabled @endif>
+                                            <input id="fire-safe-test-standard-other" type="text" name="datasheet_fields[testing_compliance][fire_safe_test_standard_other]" value="{{ $fireSafeTestStandardOther }}" aria-label="Specify fire-safe test standard" placeholder="Custom Fire-safe Standard" class="sheet-input" @if ($fireSafeOtherSelected) required @else disabled @endif>
                                         </td>
                                     </tr>
                                     <tr>
@@ -434,7 +470,7 @@
                                             {{ $fieldInput('testing_compliance.other_compliance', $testing['other_compliance'] ?? '') }}
                                         </td>
                                     </tr>
-                                    <tr><td class="datasheet-label">Notes / Vendor Remarks</td><td colspan="3"><textarea name="notes" aria-label="Notes / vendor remarks" rows="2" maxlength="5000" class="sheet-input">{{ old('notes', $snapshot['notes'] ?? '') }}</textarea></td></tr>
+                                    <tr><td class="datasheet-label">Notes / Vendor Remarks</td><td colspan="3"><textarea name="notes" aria-label="Notes / vendor remarks" placeholder="Notes / Vendor Remarks" rows="2" maxlength="5000" class="sheet-input">{{ old('notes', $snapshot['notes'] ?? '') }}</textarea></td></tr>
                                 </table>
 
                                 <table class="datasheet-table">
@@ -460,8 +496,8 @@
                                             </select>
                                         </td>
                                     </tr>
-                                    <tr><td class="datasheet-label">Witness / Hold Points</td><td><textarea name="datasheet_fields[quality_planning][witness_hold_points]" aria-label="Witness and hold points" rows="2" maxlength="1000" class="sheet-input">{{ old('datasheet_fields.quality_planning.witness_hold_points', $qualityPlanning['witness_hold_points'] ?? '') }}</textarea></td></tr>
-                                    <tr><td class="datasheet-label">Required Quality Documents</td><td><textarea name="datasheet_fields[quality_planning][quality_documents_required]" aria-label="Required quality documents" rows="2" maxlength="1000" class="sheet-input">{{ old('datasheet_fields.quality_planning.quality_documents_required', $qualityPlanning['quality_documents_required'] ?? '') }}</textarea></td></tr>
+                                    <tr><td class="datasheet-label">Witness / Hold Points</td><td><textarea name="datasheet_fields[quality_planning][witness_hold_points]" aria-label="Witness and hold points" placeholder="Witness / Hold Points" rows="2" maxlength="1000" class="sheet-input">{{ old('datasheet_fields.quality_planning.witness_hold_points', $qualityPlanning['witness_hold_points'] ?? '') }}</textarea></td></tr>
+                                    <tr><td class="datasheet-label">Required Quality Documents</td><td><textarea name="datasheet_fields[quality_planning][quality_documents_required]" aria-label="Required quality documents" placeholder="Required Quality Documents" rows="2" maxlength="1000" class="sheet-input">{{ old('datasheet_fields.quality_planning.quality_documents_required', $qualityPlanning['quality_documents_required'] ?? '') }}</textarea></td></tr>
                                     <tr><td class="datasheet-label">Required On-site Date</td><td>{{ $fieldInput('quality_planning.required_on_site_date', $qualityPlanning['required_on_site_date'] ?? '', 'date') }}</td></tr>
                                     <tr><td class="datasheet-label">Vendor Document Submission Due Date</td><td>{{ $fieldInput('quality_planning.vendor_document_submission_due_date', $qualityPlanning['vendor_document_submission_due_date'] ?? '', 'date') }}</td></tr>
                                     <tr><td class="datasheet-label">Inspection / FAT Target Date</td><td>{{ $fieldInput('quality_planning.inspection_fat_target_date', $qualityPlanning['inspection_fat_target_date'] ?? '', 'date') }}</td></tr>
