@@ -42,19 +42,25 @@
         mixed $value = null,
         string $type = 'text',
         string $classes = '',
-    ): \Illuminate\Support\HtmlString {
+    ) use ($errors): \Illuminate\Support\HtmlString {
         $name = $section.'['.str_replace('.', '][', $path).']';
         $currentValue = old($section.'.'.$path, $value);
         $ariaLabel = \Illuminate\Support\Str::headline(str_replace('.', ' ', $path));
         $step = $type === 'number' ? ' step="any"' : '';
+        $isInvalid = $errors->has($section.'.'.$path);
+        $invalidAttributes = $isInvalid ? ' aria-invalid="true"' : '';
 
         return new \Illuminate\Support\HtmlString(
-            '<input type="'.e($type).'" name="'.e($name).'" value="'.e($currentValue).'" aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"'.$step.'>',
+            '<input type="'.e($type).'" name="'.e($name).'" value="'.e($currentValue).'" aria-label="'.e($ariaLabel).'" class="sheet-input '.e($classes).'"'.$invalidAttributes.$step.'>',
         );
     };
-    $topInput = fn (string $name, mixed $value = null, string $classes = ''): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
-        '<input type="text" name="'.e($name).'" value="'.e(old($name, $value)).'" aria-label="'.e(\Illuminate\Support\Str::headline($name)).'" class="sheet-input '.e($classes).'">',
-    );
+    $topInput = function (string $name, mixed $value = null, string $classes = '') use ($errors): \Illuminate\Support\HtmlString {
+        $invalidAttributes = $errors->has($name) ? ' aria-invalid="true"' : '';
+
+        return new \Illuminate\Support\HtmlString(
+            '<input type="text" name="'.e($name).'" value="'.e(old($name, $value)).'" aria-label="'.e(\Illuminate\Support\Str::headline($name)).'" class="sheet-input '.e($classes).'"'.$invalidAttributes.'>',
+        );
+    };
     $snapshotInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('snapshot_edits', $path, $value, $type, $classes);
     $fieldInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('datasheet_fields', $path, $value, $type, $classes);
     $metricValue = fn (string $key, string $point) => data_get($process, $key.'.'.$point);
@@ -88,7 +94,8 @@
             .datasheet-title th { padding: 5px 6px; background: #202b3d; color: #fff; text-align: left; font-size: 11px; }
             .datasheet-label { background: #f7f8fa; color: #303b4c; font-weight: 600; }
             .datasheet-subhead td { background: #f0f2f5; color: #202938; text-align: center; font-weight: 600; }
-            .sheet-input { display: inline-block; width: 100%; min-width: 0; border: 1px solid #cbd5e1; border-radius: 3px; background: #fff; padding: 2px 3px; color: #202938; font: inherit; line-height: 1.25; }
+            .sheet-input { display: inline-block; width: 100%; min-width: 0; border: 1px solid #94a3b8; border-radius: 3px; background: #fff; padding: 6px 8px; color: #202938; font: inherit; font-size: 14px; line-height: 1.35; min-height: 36px; }
+            .sheet-input[aria-invalid="true"] { border-color: #dc2626; }
             .sheet-input:focus { border-color: #2563eb; outline: 2px solid rgb(37 99 235 / 20%); }
             .sheet-number { width: 2.5rem; text-align: center; }
             .sheet-unit { min-width: 3rem; text-align: center; }
@@ -101,6 +108,23 @@
             .sheet-input.sheet-unit { width: 3.5rem; }
             .sheet-input.sheet-flex { width: 1%; min-width: 2.5rem; flex: 1 1 auto; }
             .sheet-input.sheet-inline.sheet-flex { width: 1%; flex: 1 1 auto; }
+            .editor-mode-button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; color: #475569; font-size: 14px; font-weight: 600; }
+            .editor-mode-button[aria-pressed="true"] { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+            .editor-mode-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+            #datasheet-editor[data-mode="edit"] .datasheet-scroll { overflow-x: visible; }
+            #datasheet-editor[data-mode="edit"] .datasheet-page { min-width: 0; max-width: 100%; }
+            #datasheet-editor[data-mode="edit"] .inline-fields { flex-wrap: wrap; white-space: normal; }
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-inline { flex: 1 1 4rem; }
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-number,
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-number.sheet-inline { width: 3.5rem; }
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-number.sheet-inline { flex: 0 1 3.5rem; }
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-unit { width: 4.5rem; }
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-short { width: 5rem; }
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-medium { width: 8rem; }
+            #datasheet-editor[data-mode="edit"] .sheet-input.sheet-line-size { width: 6rem; }
+            #datasheet-editor[data-mode="preview"] .sheet-input { min-height: 0; border-color: transparent; border-radius: 0; background: transparent; color: inherit; padding: 2px 3px; }
+            #datasheet-editor[data-mode="preview"] select.sheet-input { appearance: none; }
+            #datasheet-editor[data-mode="preview"] textarea.sheet-input { resize: none; }
             .datasheet-page-container { max-width: 1200px; }
             @media (max-width: 767px) {
                 .datasheet-page-container { padding: 10px; }
@@ -122,7 +146,7 @@
                 </div>
             @endif
 
-            <form id="datasheet-editor" method="POST" action="{{ route('tenant.datasheets.store') }}">
+            <form id="datasheet-editor" method="POST" action="{{ route('tenant.datasheets.store') }}" data-mode="edit">
                 @csrf
                 <input type="hidden" name="draft_id" value="{{ $draft }}">
                 <input type="hidden" name="valve_model_id" value="{{ $selection['valve_model_id'] }}">
@@ -137,13 +161,30 @@
                         <p class="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Step 2 of 2</p>
                         <h1 class="text-lg font-semibold text-slate-900 dark:text-white">Review and edit datasheet</h1>
                     </div>
+                    <div class="flex items-center gap-2" role="group" aria-label="Editor mode">
+                        <button id="editor-mode-edit" type="button" class="editor-mode-button" aria-pressed="true">Edit</button>
+                        <button id="editor-mode-preview" type="button" class="editor-mode-button" aria-pressed="false">Preview</button>
+                    </div>
                     <div class="flex items-center gap-2">
                         <button form="back-to-datasheet-setup" type="submit" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Back</button>
                         <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Create datasheet</button>
                     </div>
                 </div>
+                <p id="editor-mode-status" class="sr-only" aria-live="polite">Edit mode. Datasheet fields are editable.</p>
+
+                <nav id="datasheet-section-nav" aria-label="Datasheet sections" class="mb-4 flex flex-wrap gap-x-4 gap-y-2 border-b border-slate-200 pb-3 text-sm dark:border-slate-700">
+                    <a class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-a">A. Identification</a>
+                    <a class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-b">B. Process conditions</a>
+                    <a class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-c">C. Mechanical</a>
+                    <a class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-d">D. BOM</a>
+                    <a id="control-performance-nav" class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-e" @if ($category !== 'Control / Modulating') hidden @endif>E. Performance</a>
+                    <a class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-f">F. Actuation</a>
+                    <a class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-g">G. Testing</a>
+                    <a class="font-medium text-slate-600 underline-offset-4 hover:text-blue-700 hover:underline dark:text-slate-300 dark:hover:text-blue-300" href="#section-h">H. Quality &amp; Planning</a>
+                </nav>
 
                 <div class="grid gap-5">
+                    <div id="datasheet-sections" class="grid gap-5">
                     <section class="datasheet-page-container p-3 sm:p-5">
                         <div class="datasheet-scroll">
                             <div class="datasheet-page text-[13px] leading-tight text-slate-800 dark:text-slate-100">
@@ -165,8 +206,8 @@
                                 </table>
 
                                 <table class="datasheet-table">
-                                    <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="4">A. IDENTIFICATION &amp; GENERAL DATA</th></tr>
+                                    <colgroup><col style="width:20%"><col style="width:30%"><col style="width:20%"><col style="width:30%"></colgroup>
+                                    <tr id="section-a" class="datasheet-title"><th colspan="4">A. IDENTIFICATION &amp; GENERAL DATA</th></tr>
                                     <tr><td class="datasheet-label">Equipment Tag No.</td><td>{{ $fieldInput('identification.equipment_tag', $identification['equipment_tag'] ?? '') }}</td><td class="datasheet-label">P&amp;ID Drawing No.</td><td>{{ $fieldInput('identification.pid_drawing_number', $identification['pid_drawing_number'] ?? '') }}</td></tr>
                                     <tr><td class="datasheet-label">Service / Fluid Name</td><td>{{ $fieldInput('identification.service_fluid_name', $identification['service_fluid_name'] ?? '') }}</td><td class="datasheet-label">Piping Line No. / Spec</td><td>{{ $fieldInput('identification.piping_line_spec', $identification['piping_line_spec'] ?? '') }}</td></tr>
                                     <tr>
@@ -182,26 +223,26 @@
                                         <td>{{ $fieldInput('identification.quantity_required', $identification['quantity_required'] ?? '') }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="datasheet-label">Valve Type / Pattern</td>
+                                        <td class="datasheet-label">Valve Type</td>
                                         <td>
-                                            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
-                                                <select name="snapshot_edits[model][valve_type]" aria-label="Valve type" class="sheet-input">
-                                                    @foreach ($valveTypes as $valveType)
-                                                        <option value="{{ $valveType->value }}" @selected(old('snapshot_edits.model.valve_type', $model['valve_type'] ?? '') === $valveType->value)>{{ $valveType->value }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <span>/</span>
-                                                {{ $snapshotInput('model.name', $model['name'] ?? '') }}
-                                            </div>
+                                            <select name="snapshot_edits[model][valve_type]" aria-label="Valve type" class="sheet-input">
+                                                @foreach ($valveTypes as $valveType)
+                                                    <option value="{{ $valveType->value }}" @selected(old('snapshot_edits.model.valve_type', $model['valve_type'] ?? '') === $valveType->value)>{{ $valveType->value }}</option>
+                                                @endforeach
+                                            </select>
                                         </td>
+                                        <td class="datasheet-label">Valve Model / Pattern</td>
+                                        <td>{{ $snapshotInput('model.name', $model['name'] ?? '') }}</td>
+                                    </tr>
+                                    <tr>
                                         <td class="datasheet-label">Installation Location</td>
-                                        <td>{{ $fieldInput('identification.installation_location', $identification['installation_location'] ?? '') }}</td>
+                                        <td colspan="3">{{ $fieldInput('identification.installation_location', $identification['installation_location'] ?? '') }}</td>
                                     </tr>
                                 </table>
 
                                 <table class="datasheet-table">
                                     <colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="5">B. PROCESS &amp; OPERATING CONDITIONS</th></tr>
+                                    <tr id="section-b" class="datasheet-title"><th colspan="5">B. PROCESS &amp; OPERATING CONDITIONS</th></tr>
                                     <tr class="datasheet-subhead"><td>Parameter</td><td>Units</td><td>Minimum</td><td>Normal</td><td>Maximum</td></tr>
                                     <tr><td class="datasheet-label">Fluid Phase &amp; State</td><td class="text-center">—</td><td colspan="3">{{ $fieldInput('process_conditions.fluid_phase_state', $process['fluid_phase_state'] ?? '') }}</td></tr>
                                     @foreach ([
@@ -268,7 +309,7 @@
 
                                 <table class="datasheet-table">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="4">C. VALVE BODY &amp; MECHANICAL CONSTRUCTION</th></tr>
+                                    <tr id="section-c" class="datasheet-title"><th colspan="4">C. VALVE BODY &amp; MECHANICAL CONSTRUCTION</th></tr>
                                     <tr>
                                         <td class="datasheet-label">Nominal Valve Size (DN / NPS)</td>
                                         <td>{{ $fieldInput('mechanical.nominal_size', $nominalSize) }}</td>
@@ -282,7 +323,7 @@
 
                                 <table class="datasheet-table">
                                     <colgroup><col style="width:8%"><col style="width:22%"><col style="width:70%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
+                                    <tr id="section-d" class="datasheet-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
                                     <tr class="datasheet-subhead"><td>S. No.</td><td>Part name</td><td>Material details</td></tr>
                                     @forelse ($bom as $index => $row)
                                         <tr>
@@ -308,7 +349,7 @@
                             <div class="datasheet-page text-[13px] leading-tight text-slate-800 dark:text-slate-100">
                                 <table id="control-performance-section" class="datasheet-table {{ $category === 'Control / Modulating' ? '' : 'hidden' }}">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>
+                                    <tr id="section-e" class="datasheet-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>
                                     <tr>
                                         <td class="datasheet-label">Flow Characteristic</td>
                                         <td>{{ $snapshotInput('model.flow_characteristic', $model['flow_characteristic'] ?? '') }}</td>
@@ -337,7 +378,7 @@
 
                                 <table class="datasheet-table">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="4">F. ACTUATION &amp; ACCESSORIES</th></tr>
+                                    <tr id="section-f" class="datasheet-title"><th colspan="4">F. ACTUATION &amp; ACCESSORIES</th></tr>
                                     <tr><td class="datasheet-label">Operator / Actuator Type</td><td>{{ $fieldInput('actuation.actuator_type', $actuation['actuator_type'] ?? '') }}</td><td class="datasheet-label">Supply Air / Power Rating</td><td>{{ $fieldInput('actuation.supply_rating', $actuation['supply_rating'] ?? '') }}</td></tr>
                                     <tr><td class="datasheet-label">Fail-Safe Action</td><td>{{ $fieldInput('actuation.fail_safe_action', $actuation['fail_safe_action'] ?? '') }}</td><td class="datasheet-label">Stroking Time (Open / Close)</td><td>{{ $fieldInput('actuation.stroking_time', $actuation['stroking_time'] ?? '') }}</td></tr>
                                     <tr>
@@ -357,7 +398,7 @@
 
                                 <table class="datasheet-table">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
+                                    <tr id="section-g" class="datasheet-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
                                     <tr><td class="datasheet-label">Shell / Body Test Standard</td><td>{{ $fieldInput('testing_compliance.shell_test_standard', $shellTestStandard) }}</td><td class="datasheet-label">Seat / Closure Test Standard</td><td>{{ $fieldInput('testing_compliance.seat_test_standard', $seatTestStandard) }}</td></tr>
                                     <tr><td class="datasheet-label">Seat Leakage Class</td><td>{{ $fieldInput('testing_compliance.seat_leakage_class', $testing['seat_leakage_class'] ?? '') }}</td><td class="datasheet-label">Material Certification</td><td>{{ $fieldInput('testing_compliance.material_certification', $testing['material_certification'] ?? '') }}</td></tr>
                                     <tr><td class="datasheet-label">NDT / NDE Requirements</td><td colspan="3">{{ $fieldInput('testing_compliance.ndt_requirements', $testing['ndt_requirements'] ?? '') }}</td></tr>
@@ -398,7 +439,7 @@
 
                                 <table class="datasheet-table">
                                     <colgroup><col style="width:34%"><col style="width:66%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="2">H. QUALITY &amp; PROJECT PLANNING</th></tr>
+                                    <tr id="section-h" class="datasheet-title"><th colspan="2">H. QUALITY &amp; PROJECT PLANNING</th></tr>
                                     <tr>
                                         <td class="datasheet-label">Inspection &amp; Test Plan (ITP)</td>
                                         <td>
@@ -441,6 +482,7 @@
                             </div>
                         </div>
                     </section>
+                    </div>
 
                     <div class="flex justify-end">
                         <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Create datasheet</button>
@@ -458,10 +500,12 @@
         <script>
             const categorySelect = document.getElementById('snapshot-valve-category');
             const controlSection = document.getElementById('control-performance-section');
+            const controlPerformanceNav = document.getElementById('control-performance-nav');
 
             function updateControlPerformanceFields() {
                 const isModulating = categorySelect.value === 'Control / Modulating';
                 controlSection.classList.toggle('hidden', !isModulating);
+                controlPerformanceNav.hidden = !isModulating;
                 controlSection.querySelectorAll('input, select, textarea').forEach((field) => {
                     field.disabled = !isModulating;
                 });
@@ -483,6 +527,27 @@
 
             fireSafeTestStandardSelect.addEventListener('change', updateFireSafeStandardFields);
             updateFireSafeStandardFields();
+
+            const editorForm = document.getElementById('datasheet-editor');
+            const datasheetSections = document.getElementById('datasheet-sections');
+            const editModeButton = document.getElementById('editor-mode-edit');
+            const previewModeButton = document.getElementById('editor-mode-preview');
+            const editorModeStatus = document.getElementById('editor-mode-status');
+
+            function setEditorMode(mode) {
+                const isEditMode = mode === 'edit';
+
+                editorForm.dataset.mode = mode;
+                datasheetSections.inert = !isEditMode;
+                editModeButton.setAttribute('aria-pressed', String(isEditMode));
+                previewModeButton.setAttribute('aria-pressed', String(!isEditMode));
+                editorModeStatus.textContent = isEditMode
+                    ? 'Edit mode. Datasheet fields are editable.'
+                    : 'Preview mode. Datasheet fields are read-only.';
+            }
+
+            editModeButton.addEventListener('click', () => setEditorMode('edit'));
+            previewModeButton.addEventListener('click', () => setEditorMode('preview'));
         </script>
     @endpush
 </x-layouts.dashboard>
