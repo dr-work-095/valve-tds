@@ -122,6 +122,7 @@ class DatasheetController extends Controller
                 'seat_test_standard' => $model->testing_standard,
                 'seat_leakage_class' => $model->seat_leakage_class,
             ],
+            'quality_planning' => [],
             'revision' => [
                 'description' => 'Issued for Design / Inquiry',
             ],

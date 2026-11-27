@@ -339,6 +339,15 @@ class TenantSampleDatasheetSeeder extends Seeder
                         ],
                         'other_compliance' => 'Confirm applicability of SIL certification during project engineering.',
                     ],
+                    'quality_planning' => [
+                        'itp_required' => 'Required',
+                        'third_party_inspection_required' => 'Required',
+                        'witness_hold_points' => 'Purchaser witness: shell and seat tests.',
+                        'quality_documents_required' => 'Material certificates, NDE reports, and final inspection records.',
+                        'required_on_site_date' => '2027-03-15',
+                        'vendor_document_submission_due_date' => '2027-01-15',
+                        'inspection_fat_target_date' => '2027-02-20',
+                    ],
                     'revision' => [
                         'description' => 'Issued for Design / Inquiry',
                         'prepared_by' => 'A. Engineer',

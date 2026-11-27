@@ -8,6 +8,7 @@
     $process = $fields['process_conditions'] ?? [];
     $mechanical = $fields['mechanical'] ?? [];
     $performance = $fields['control_performance'] ?? [];
+    $qualityPlanning = $fields['quality_planning'] ?? [];
     $actuation = $fields['actuation'] ?? [];
     $testing = $fields['testing_compliance'] ?? [];
     $shellTestStandard = array_key_exists('shell_test_standard', $testing)
@@ -280,9 +281,9 @@
                                 </table>
 
                                 <table class="datasheet-table">
-                                    <colgroup><col style="width:8%"><col style="width:22%"><col style="width:52%"><col style="width:18%"></colgroup>
-                                    <tr class="datasheet-title"><th colspan="4">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
-                                    <tr class="datasheet-subhead"><td>S. No.</td><td>Part name</td><td>Material details</td><td>Qty / Unit</td></tr>
+                                    <colgroup><col style="width:8%"><col style="width:22%"><col style="width:70%"></colgroup>
+                                    <tr class="datasheet-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
+                                    <tr class="datasheet-subhead"><td>S. No.</td><td>Part name</td><td>Material details</td></tr>
                                     @forelse ($bom as $index => $row)
                                         <tr>
                                             <td class="text-center">{{ $loop->iteration }}</td>
@@ -293,19 +294,9 @@
                                                     {{ $snapshotInput('bom.'.$index.'.material_name', $row['material_name'] ?? '', 'text', 'sheet-inline sheet-flex') }}
                                                 </div>
                                             </td>
-                                            <td>
-                                                @php
-                                                    $quantity = old('snapshot_edits.bom.'.$index.'.quantity_per_valve', $row['quantity_per_valve'] ?? 1);
-                                                    $unit = old('snapshot_edits.bom.'.$index.'.unit', $row['unit'] ?? 'ea');
-                                                    $quantityAndUnit = trim((string) $quantity.' '.(string) $unit);
-                                                @endphp
-                                                <div class="inline-fields">
-                                                    {{ $snapshotInput('bom.'.$index.'.quantity_and_unit', $quantityAndUnit, 'text', 'sheet-inline sheet-flex') }}
-                                                </div>
-                                            </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="4" class="text-center">No BOM materials configured</td></tr>
+                                        <tr><td colspan="3" class="text-center">No BOM materials configured</td></tr>
                                     @endforelse
                                 </table>
                             </div>
@@ -403,6 +394,36 @@
                                         </td>
                                     </tr>
                                     <tr><td class="datasheet-label">Notes / Vendor Remarks</td><td colspan="3"><textarea name="notes" aria-label="Notes / vendor remarks" rows="2" maxlength="5000" class="sheet-input">{{ old('notes', $snapshot['notes'] ?? '') }}</textarea></td></tr>
+                                </table>
+
+                                <table class="datasheet-table">
+                                    <colgroup><col style="width:34%"><col style="width:66%"></colgroup>
+                                    <tr class="datasheet-title"><th colspan="2">H. QUALITY &amp; PROJECT PLANNING</th></tr>
+                                    <tr>
+                                        <td class="datasheet-label">Inspection &amp; Test Plan (ITP)</td>
+                                        <td>
+                                            <select name="datasheet_fields[quality_planning][itp_required]" aria-label="Inspection and test plan requirement" class="sheet-input">
+                                                <option value="">Not specified</option>
+                                                <option value="Required" @selected(old('datasheet_fields.quality_planning.itp_required', $qualityPlanning['itp_required'] ?? '') === 'Required')>Required</option>
+                                                <option value="Not Required" @selected(old('datasheet_fields.quality_planning.itp_required', $qualityPlanning['itp_required'] ?? '') === 'Not Required')>Not Required</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="datasheet-label">Third-party Inspection (TPI)</td>
+                                        <td>
+                                            <select name="datasheet_fields[quality_planning][third_party_inspection_required]" aria-label="Third-party inspection requirement" class="sheet-input">
+                                                <option value="">Not specified</option>
+                                                <option value="Required" @selected(old('datasheet_fields.quality_planning.third_party_inspection_required', $qualityPlanning['third_party_inspection_required'] ?? '') === 'Required')>Required</option>
+                                                <option value="Not Required" @selected(old('datasheet_fields.quality_planning.third_party_inspection_required', $qualityPlanning['third_party_inspection_required'] ?? '') === 'Not Required')>Not Required</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr><td class="datasheet-label">Witness / Hold Points</td><td><textarea name="datasheet_fields[quality_planning][witness_hold_points]" aria-label="Witness and hold points" rows="2" maxlength="1000" class="sheet-input">{{ old('datasheet_fields.quality_planning.witness_hold_points', $qualityPlanning['witness_hold_points'] ?? '') }}</textarea></td></tr>
+                                    <tr><td class="datasheet-label">Required Quality Documents</td><td><textarea name="datasheet_fields[quality_planning][quality_documents_required]" aria-label="Required quality documents" rows="2" maxlength="1000" class="sheet-input">{{ old('datasheet_fields.quality_planning.quality_documents_required', $qualityPlanning['quality_documents_required'] ?? '') }}</textarea></td></tr>
+                                    <tr><td class="datasheet-label">Required On-site Date</td><td>{{ $fieldInput('quality_planning.required_on_site_date', $qualityPlanning['required_on_site_date'] ?? '', 'date') }}</td></tr>
+                                    <tr><td class="datasheet-label">Vendor Document Submission Due Date</td><td>{{ $fieldInput('quality_planning.vendor_document_submission_due_date', $qualityPlanning['vendor_document_submission_due_date'] ?? '', 'date') }}</td></tr>
+                                    <tr><td class="datasheet-label">Inspection / FAT Target Date</td><td>{{ $fieldInput('quality_planning.inspection_fat_target_date', $qualityPlanning['inspection_fat_target_date'] ?? '', 'date') }}</td></tr>
                                 </table>
 
                                 <table class="datasheet-table">

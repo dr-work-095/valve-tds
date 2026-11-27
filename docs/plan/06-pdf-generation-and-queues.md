@@ -95,9 +95,11 @@ Phase 6 is implemented for the current MVP surface:
 - Datasheet creation dispatches `GenerateDatasheetPdfJob` to the `high` queue.
 - The job re-establishes tenant context, renders only the persisted snapshot, writes
   to the tenant-private datasheets directory, and marks records generated or failed.
-- Sections A–G follow the supplied [industrial datasheet reference](../industrial-valve-datasheet.html),
+- Sections A–H follow the supplied [industrial datasheet reference](../industrial-valve-datasheet.html),
   with project engineering values read exclusively from the immutable snapshot;
   control-performance data is displayed only for Control / Modulating models.
+- Section H renders ITP/TPI requirements, witness/hold points, required quality
+  documents, and project-planning dates as separate rows.
 - The PDF header includes the client name alongside document, revision, and project
   metadata.
 - `spatie/browsershot` and Puppeteer are installed; Chrome is configurable through
@@ -109,7 +111,7 @@ Phase 6 is implemented for the current MVP surface:
   tenant catalog pages.
 - An opt-in local/testing seeder automatically initializes the first tenant by ID
   and creates an illustrative control-valve model, dimension, BOM, and complete
-  A–G datasheet; it does not run as part of normal tenant provisioning.
+  A–H datasheet; it does not run as part of normal tenant provisioning.
 - `app:expire-overdue-tenants` is registered and scheduled daily at 01:00 in bounded
   `chunkById(100)` batches.
 
@@ -135,6 +137,9 @@ php artisan app:seed-sample-datasheet --no-interaction
   the unchanged snapshot.
 - Compare the generated two-page PDF with the supplied reference for section order,
   grouped process metrics, table layout, and page labels.
+- Confirm Section H appears on page 2 without clipping or overflow; automated
+  Blade-view tests verify its separate rows and page labels, while final page-fit
+  verification requires rendering the real PDF with Chrome.
 - Confirm the client name shown in the datasheet editor appears in the generated PDF.
 - Edit the combined nominal-size value and confirm the PDF uses the edited value
   while the selected catalog dimension remains unchanged.

@@ -296,17 +296,18 @@ class TenantConfiguratorTest extends TestCase
         $this->assertStringContainsString('Bolted bonnet', $pdfHtml);
         $this->assertStringContainsString('Shell / Body Test Standard', $pdfHtml);
         $this->assertStringContainsString('Seat / Closure Test Standard', $pdfHtml);
-        $this->assertStringContainsString('<tr><td class="label">Fire-safe Test Standard</td><td>Other: Customer fire-test specification FS-12</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Fire-safe Test Standard</td><td>Customer fire-test specification FS-12</td></tr>', $pdfHtml);
+        $this->assertStringNotContainsString('Other: Customer fire-test specification FS-12', $pdfHtml);
         $this->assertStringContainsString('ASME B16.34', $pdfHtml);
         $this->assertStringContainsString('ANSI FCI 70-2', $pdfHtml);
         $this->assertStringContainsString('CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)', $pdfHtml);
         $this->assertStringContainsString('S. No.', $pdfHtml);
         $this->assertStringContainsString('Part name', $pdfHtml);
         $this->assertStringContainsString('Material details', $pdfHtml);
-        $this->assertStringContainsString('Qty / Unit', $pdfHtml);
+        $this->assertStringNotContainsString('Qty / Unit', $pdfHtml);
         $this->assertStringContainsString('<td class="center">1</td>', $pdfHtml);
         $this->assertStringContainsString('<td class="label">Body</td>', $pdfHtml);
-        $this->assertStringContainsString('1.000 ea', $pdfHtml);
+        $this->assertStringNotContainsString('<td class="center">1.000 ea</td>', $pdfHtml);
         $this->assertStringNotContainsString('Body &amp; Bonnet', $pdfHtml);
         $this->assertStringNotContainsString('alert(1)', $pdfHtml);
         $this->assertStringNotContainsString('<script>alert(1)</script>', $pdfHtml);
@@ -391,7 +392,7 @@ class TenantConfiguratorTest extends TestCase
         ])->assertSessionHasErrors('dimension_id');
     }
 
-    public function test_datasheet_rejects_invalid_process_values_and_unknown_accessories(): void
+    public function test_datasheet_rejects_invalid_process_and_planning_values_and_unknown_accessories(): void
     {
         [$tenant, $sales] = $this->createTenantUser('sales');
         $this->prepareTenantDatabase($tenant);
@@ -413,6 +414,10 @@ class TenantConfiguratorTest extends TestCase
                 'actuation' => [
                     'mounted_accessories' => ['Unknown accessory'],
                 ],
+                'quality_planning' => [
+                    'itp_required' => 'Sometimes',
+                    'required_on_site_date' => 'next week',
+                ],
             ],
             'snapshot_edits' => [
                 'model' => ['is_active' => false],
@@ -421,6 +426,8 @@ class TenantConfiguratorTest extends TestCase
             'datasheet_fields.process_conditions.flow_rate.minimum',
             'datasheet_fields.control_performance',
             'datasheet_fields.actuation.mounted_accessories.0',
+            'datasheet_fields.quality_planning.itp_required',
+            'datasheet_fields.quality_planning.required_on_site_date',
             'snapshot_edits.model',
         ]);
     }
@@ -487,6 +494,14 @@ class TenantConfiguratorTest extends TestCase
             ->assertSee('value="(4&quot;) Body"', false)
             ->assertSee('name="datasheet_fields[testing_compliance][shell_test_standard]"', false)
             ->assertSee('name="datasheet_fields[testing_compliance][seat_test_standard]"', false)
+            ->assertSee('H. QUALITY &amp; PROJECT PLANNING', false)
+            ->assertSee('name="datasheet_fields[quality_planning][itp_required]"', false)
+            ->assertSee('name="datasheet_fields[quality_planning][third_party_inspection_required]"', false)
+            ->assertSee('name="datasheet_fields[quality_planning][witness_hold_points]"', false)
+            ->assertSee('name="datasheet_fields[quality_planning][quality_documents_required]"', false)
+            ->assertSee('name="datasheet_fields[quality_planning][required_on_site_date]"', false)
+            ->assertSee('name="datasheet_fields[quality_planning][vendor_document_submission_due_date]"', false)
+            ->assertSee('name="datasheet_fields[quality_planning][inspection_fat_target_date]"', false)
             ->assertSee('name="datasheet_fields[testing_compliance][fire_safe_test_standard]"', false)
             ->assertSee('value="API 607"', false)
             ->assertSee('value="API 6FA"', false)
@@ -500,13 +515,13 @@ class TenantConfiguratorTest extends TestCase
             ->assertSee('name="snapshot_edits[bom][0][part_name]"', false)
             ->assertDontSee('name="snapshot_edits[bom][0][component_group]"', false)
             ->assertDontSee('name="snapshot_edits[bom][0][notes]"', false)
-            ->assertSee('name="snapshot_edits[bom][0][quantity_and_unit]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][quantity_and_unit]"', false)
             ->assertDontSee('name="snapshot_edits[bom][0][quantity_per_valve]"', false)
             ->assertDontSee('name="snapshot_edits[bom][0][unit]"', false)
             ->assertSee('>S. No.</td>', false)
             ->assertSee('>Part name</td>', false)
             ->assertSee('>Material details</td>', false)
-            ->assertSee('>Qty / Unit</td>', false)
+            ->assertDontSee('>Qty / Unit</td>', false)
             ->assertSee('name="datasheet_fields[process_conditions][flow_rate][minimum]"', false)
             ->assertSee('name="client_name"', false)
             ->assertSee('Create datasheet');
@@ -525,7 +540,7 @@ class TenantConfiguratorTest extends TestCase
         tenancy()->end();
     }
 
-    public function test_datasheet_editor_displays_bom_serial_number_and_combined_quantity_unit(): void
+    public function test_datasheet_editor_displays_bom_serial_number_without_quantity_column(): void
     {
         [$tenant, $sales] = $this->createTenantUser('sales');
         $this->prepareTenantDatabase($tenant);
@@ -547,12 +562,12 @@ class TenantConfiguratorTest extends TestCase
             ->assertSee('type="text" name="snapshot_edits[bom][0][part_name]"', false)
             ->assertSee('value="Body &amp; Bonnet"', false)
             ->assertDontSee('name="snapshot_edits[bom][0][component_group]"', false)
-            ->assertSee('name="snapshot_edits[bom][0][quantity_and_unit]"', false)
+            ->assertDontSee('name="snapshot_edits[bom][0][quantity_and_unit]"', false)
             ->assertDontSee('name="snapshot_edits[bom][0][quantity_per_valve]"', false)
             ->assertDontSee('name="snapshot_edits[bom][0][unit]"', false)
             ->assertSee('>S. No.</td>', false)
             ->assertSee('<td class="text-center">1</td>', false)
-            ->assertSee('>Qty / Unit</td>', false)
+            ->assertDontSee('>Qty / Unit</td>', false)
             ->assertDontSee('>Quantity</td>', false)
             ->assertDontSee('>Unit</td>', false);
     }
@@ -631,6 +646,15 @@ class TenantConfiguratorTest extends TestCase
                     'seat_test_standard' => '',
                     'seat_leakage_class' => '',
                 ],
+                'quality_planning' => [
+                    'itp_required' => 'Required',
+                    'third_party_inspection_required' => 'Not Required',
+                    'witness_hold_points' => 'Client witness for shell and seat tests.',
+                    'quality_documents_required' => 'Material certificates, RT reports, PMI report.',
+                    'required_on_site_date' => '2027-03-15',
+                    'vendor_document_submission_due_date' => '2027-02-01',
+                    'inspection_fat_target_date' => '2027-02-20',
+                ],
             ],
         ])->assertRedirect(route('tenant.datasheets.index'));
 
@@ -650,6 +674,13 @@ class TenantConfiguratorTest extends TestCase
         $this->assertSame('set', $snapshot['bom'][0]['unit']);
         $this->assertSame('Liquid, clean water', $snapshot['datasheet_fields']['process_conditions']['fluid_phase_state']);
         $this->assertSame('72 dBA', $snapshot['datasheet_fields']['control_performance']['predicted_noise']);
+        $this->assertSame('Required', $snapshot['datasheet_fields']['quality_planning']['itp_required']);
+        $this->assertSame('Not Required', $snapshot['datasheet_fields']['quality_planning']['third_party_inspection_required']);
+        $this->assertSame('Client witness for shell and seat tests.', $snapshot['datasheet_fields']['quality_planning']['witness_hold_points']);
+        $this->assertSame('Material certificates, RT reports, PMI report.', $snapshot['datasheet_fields']['quality_planning']['quality_documents_required']);
+        $this->assertSame('2027-03-15', $snapshot['datasheet_fields']['quality_planning']['required_on_site_date']);
+        $this->assertSame('2027-02-01', $snapshot['datasheet_fields']['quality_planning']['vendor_document_submission_due_date']);
+        $this->assertSame('2027-02-20', $snapshot['datasheet_fields']['quality_planning']['inspection_fat_target_date']);
         $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['shell_test_standard']);
         $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['seat_test_standard']);
         $this->assertNull($snapshot['datasheet_fields']['testing_compliance']['seat_leakage_class']);
@@ -661,8 +692,16 @@ class TenantConfiguratorTest extends TestCase
             'snapshot' => $snapshot,
         ])->render();
         $this->assertStringContainsString('DN150 (6&quot;) Body / 4&quot; Line', $pdfHtml);
+        $this->assertStringContainsString('H. QUALITY &amp; PROJECT PLANNING', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Inspection &amp; Test Plan (ITP)</td><td>Required</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Third-party Inspection (TPI)</td><td>Not Required</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Witness / Hold Points</td><td>Client witness for shell and seat tests.</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Required Quality Documents</td><td>Material certificates, RT reports, PMI report.</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Required On-site Date</td><td>2027-03-15</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Vendor Document Submission Due Date</td><td>2027-02-01</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Inspection / FAT Target Date</td><td>2027-02-20</td></tr>', $pdfHtml);
         $this->assertStringContainsString('<td class="label">Project Body</td>', $pdfHtml);
-        $this->assertStringContainsString('2 set', $pdfHtml);
+        $this->assertStringNotContainsString('2 set', $pdfHtml);
         $this->assertStringNotContainsString('API 598', $pdfHtml);
         $this->assertStringNotContainsString('ANSI Class V', $pdfHtml);
         $this->assertSame(1, Queue::pushed(

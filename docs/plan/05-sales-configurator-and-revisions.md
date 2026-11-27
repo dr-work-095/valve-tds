@@ -121,9 +121,13 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
   defaults, selected dimensions, ordered BOM component details and resolved material
   display values, notes, client/project data, and optional engineering conditions
   captured from the datasheet form.
+- Quality and project-planning requirements (ITP/TPI status, witness/hold points,
+  required quality documents, and target dates) are validated and saved in each
+  datasheet snapshot rather than reusable model or dimension records.
 - The PDF follows the two-page industrial datasheet template with identification,
   operating conditions, mechanical construction, BOM, control performance,
-  actuation, testing/compliance, and revision sign-off sections.
+  actuation, testing/compliance, quality/project planning, and revision sign-off
+  sections.
 - Cross-model dimensions and forged/inactive/ineligible BOM material selections are
   rejected server-side.
 - Revisions clone the source snapshot, allocate monotonic revision numbers, and link
@@ -133,8 +137,9 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
 - Creation and revision quota checks use tenant-specific values and database
   transactions/locks for the configured boundaries.
 
-The focused configurator suite passes for dynamic quota boundaries, snapshot
-immutability, cross-model validation, and revision linkage.
+Focused configurator and PDF suites pass for dynamic quota boundaries, snapshot
+immutability, cross-model validation, revision linkage, quality-planning
+validation/persistence, and editor/PDF rendering.
 
 ### QA checklist
 
@@ -151,8 +156,9 @@ immutability, cross-model validation, and revision linkage.
   only the new datasheet snapshot rather than catalog records.
 - Confirm datasheets source model construction and BOM component details from the
   catalog, while line size and operating/actuation values remain project-specific.
-- Enter optional values across the engineering datasheet sections; confirm values
-  are validated, frozen in the snapshot, and rendered in the generated PDF.
+- Enter values for ITP, TPI, witness/hold points, required quality documents, and
+  planning dates; confirm invalid statuses/dates are rejected, valid values are
+  frozen in the datasheet snapshot, and each parameter renders on its own PDF row.
 - Confirm control-performance inputs and PDF section are only shown for
   Control / Modulating models; leave non-applicable fields blank.
 - Submit a forged dimension or material from another model/tenant and confirm

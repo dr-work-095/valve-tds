@@ -8,6 +8,7 @@
     $process = $fields['process_conditions'] ?? [];
     $mechanical = $fields['mechanical'] ?? [];
     $performance = $fields['control_performance'] ?? [];
+    $qualityPlanning = $fields['quality_planning'] ?? [];
     $actuation = $fields['actuation'] ?? [];
     $testing = $fields['testing_compliance'] ?? [];
     $revision = $fields['revision'] ?? [];
@@ -20,7 +21,7 @@
         : ($legacyFireSafeSelected ? \App\Enums\FireSafeTestStandard::Api607->value : null);
     $fireSafeOtherStandard = $testing['fire_safe_test_standard_other'] ?? null;
     $fireSafeTestStandardDisplay = $fireSafeTestStandard === \App\Enums\FireSafeTestStandard::Other->value
-        ? 'Other'.(filled($fireSafeOtherStandard) ? ': '.$fireSafeOtherStandard : '')
+        ? (filled($fireSafeOtherStandard) ? $fireSafeOtherStandard : $fireSafeTestStandard)
         : $fireSafeTestStandard;
     $shellTestStandard = array_key_exists('shell_test_standard', $testing)
         ? $testing['shell_test_standard']
@@ -175,18 +176,17 @@
     </table>
 
     <table class="data">
-        <colgroup><col style="width:8%"><col style="width:22%"><col style="width:52%"><col style="width:18%"></colgroup>
-        <tr class="section-title"><th colspan="4">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
-        <tr class="subhead"><td>S. No.</td><td>Part name</td><td>Material details</td><td>Qty / Unit</td></tr>
+        <colgroup><col style="width:8%"><col style="width:22%"><col style="width:70%"></colgroup>
+        <tr class="section-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
+        <tr class="subhead"><td>S. No.</td><td>Part name</td><td>Material details</td></tr>
         @forelse ($bom as $row)
             <tr>
                 <td class="center">{{ $loop->iteration }}</td>
                 <td class="label">{{ $row['part_name'] }}</td>
                 <td>{{ $row['material_code'] }} — {{ $row['material_name'] }}</td>
-                <td class="center">{{ $row['quantity_per_valve'] ?? 1 }} {{ $row['unit'] ?? 'ea' }}</td>
             </tr>
         @empty
-            <tr><td colspan="4" class="center">No BOM materials configured</td></tr>
+            <tr><td colspan="3" class="center">No BOM materials configured</td></tr>
         @endforelse
     </table>
     <div class="footer"><span class="left">Industrial Valve Engineering Datasheet — Standard Specification Template</span><span class="right">Page 1 of 2</span></div>
@@ -232,6 +232,18 @@
         @endforeach
         <tr><td class="label">Other Compliance</td><td>{{ $valueOrDash($testing['other_compliance'] ?? null) }}</td></tr>
         <tr><td class="label">Notes / Vendor Remarks</td><td>{{ $valueOrDash($snapshot['notes'] ?? null) }}</td></tr>
+    </table>
+
+    <table class="data">
+        <colgroup><col style="width:42%"><col style="width:58%"></colgroup>
+        <tr class="section-title"><th colspan="2">H. QUALITY &amp; PROJECT PLANNING</th></tr>
+        <tr><td class="label">Inspection &amp; Test Plan (ITP)</td><td>{{ $valueOrDash($qualityPlanning['itp_required'] ?? null) }}</td></tr>
+        <tr><td class="label">Third-party Inspection (TPI)</td><td>{{ $valueOrDash($qualityPlanning['third_party_inspection_required'] ?? null) }}</td></tr>
+        <tr><td class="label">Witness / Hold Points</td><td>{{ $valueOrDash($qualityPlanning['witness_hold_points'] ?? null) }}</td></tr>
+        <tr><td class="label">Required Quality Documents</td><td>{{ $valueOrDash($qualityPlanning['quality_documents_required'] ?? null) }}</td></tr>
+        <tr><td class="label">Required On-site Date</td><td>{{ $valueOrDash($qualityPlanning['required_on_site_date'] ?? null) }}</td></tr>
+        <tr><td class="label">Vendor Document Submission Due Date</td><td>{{ $valueOrDash($qualityPlanning['vendor_document_submission_due_date'] ?? null) }}</td></tr>
+        <tr><td class="label">Inspection / FAT Target Date</td><td>{{ $valueOrDash($qualityPlanning['inspection_fat_target_date'] ?? null) }}</td></tr>
     </table>
 
     <table class="data revision">
