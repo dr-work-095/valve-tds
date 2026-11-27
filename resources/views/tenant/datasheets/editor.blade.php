@@ -101,7 +101,7 @@
             .sheet-input.sheet-unit { width: 3.5rem; }
             .sheet-input.sheet-flex { width: 1%; min-width: 2.5rem; flex: 1 1 auto; }
             .sheet-input.sheet-inline.sheet-flex { width: 1%; flex: 1 1 auto; }
-            .datasheet-page-container { max-width: 1100px; }
+            .datasheet-page-container { max-width: 1200px; }
             @media (max-width: 767px) {
                 .datasheet-page-container { padding: 10px; }
                 .datasheet-page { min-width: 760px; }
@@ -146,15 +146,15 @@
                 <div class="grid gap-5">
                     <section class="datasheet-page-container p-3 sm:p-5">
                         <div class="datasheet-scroll">
-                            <div class="datasheet-page text-[10px] leading-tight text-slate-800 dark:text-slate-100">
+                            <div class="datasheet-page text-[13px] leading-tight text-slate-800 dark:text-slate-100">
                                 <table class="datasheet-table">
                                     <tr>
                                         <td class="w-[55%]">
                                             <div class="text-base font-bold tracking-wide">INDUSTRIAL VALVE ENGINEERING<br>DATASHEET</div>
-                                            <div class="mt-1 text-[9px] text-slate-600">{{ $company['company_name'] ?? 'Standard Specification Form (Isolation, Automated On/Off & Control Valves)' }}</div>
+                                            <div class="mt-1 text-[13px] text-slate-600">{{ $company['company_name'] ?? 'Standard Specification Form (Isolation, Automated On/Off & Control Valves)' }}</div>
                                         </td>
                                         <td class="w-[45%]">
-                                            <table class="w-full border-collapse text-[9px]">
+                                            <table class="w-full border-collapse text-[13px]">
                                                 <tr><td class="w-[36%] border-0 font-semibold">Document No.:</td><td class="border-0">{{ $topInput('document_number', $selection['document_number'] ?? '') }}</td></tr>
                                                 <tr><td class="border-0 font-semibold">Client:</td><td class="border-0">{{ $topInput('client_name', $selection['client_name']) }}</td></tr>
                                                 <tr><td class="border-0 font-semibold">Revision / Status:</td><td class="border-0"><div class="inline-fields">Rev 0 — {{ $fieldInput('document_status', $fields['document_status'] ?? 'Issued for Inquiry', 'text', 'sheet-inline sheet-flex') }}</div></td></tr>
@@ -305,7 +305,7 @@
 
                     <section class="datasheet-page-container p-3 sm:p-5">
                         <div class="datasheet-scroll">
-                            <div class="datasheet-page text-[10px] leading-tight text-slate-800 dark:text-slate-100">
+                            <div class="datasheet-page text-[13px] leading-tight text-slate-800 dark:text-slate-100">
                                 <table id="control-performance-section" class="datasheet-table {{ $category === 'Control / Modulating' ? '' : 'hidden' }}">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr class="datasheet-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>
