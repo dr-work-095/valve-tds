@@ -219,6 +219,27 @@
             }
             #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr.process-condition-preview-row,
             #datasheet-editor[data-mode="preview"] .datasheet-table.process-conditions-section tr.process-condition-edit-row { display: none; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.control-performance-section tr.control-performance-preview-row,
+            #datasheet-editor[data-mode="preview"] .datasheet-table.control-performance-section tr.control-performance-edit-row { display: none; }
+            #datasheet-editor[data-mode="edit"] .control-performance-range-fields {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+            }
+            #datasheet-editor[data-mode="edit"] .control-performance-capacity-fields {
+                grid-template-columns: minmax(80px, .7fr) repeat(3, minmax(0, 1fr));
+            }
+            #datasheet-editor[data-mode="edit"] .control-performance-range-field {
+                display: grid;
+                gap: 4px;
+                min-width: 0;
+            }
+            #datasheet-editor[data-mode="edit"] .control-performance-range-label {
+                color: #64748b;
+                font-size: 12px;
+                font-weight: 600;
+            }
             #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr.datasheet-subhead {
                 background: #f8fafc;
                 color: #475569;
@@ -538,30 +559,79 @@
                                 <table id="control-performance-section" class="datasheet-table editor-section control-performance-section {{ $category === 'Control / Modulating' ? '' : 'hidden' }}">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr id="section-e" class="datasheet-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>
-                                    <tr>
+                                    <tr class="control-performance-edit-row">
                                         <td class="datasheet-label">Flow Characteristic</td>
-                                        <td>{{ $snapshotInput('model.flow_characteristic', $model['flow_characteristic'] ?? '') }}</td>
-                                        <td class="datasheet-label">Valve Travel (% Open)</td>
-                                        <td><div class="inline-fields">
-                                            @foreach (['minimum' => 'Min', 'normal' => 'Norm', 'maximum' => 'Max'] as $point => $label)
-                                                {{ $label }}: {{ $fieldInput('control_performance.valve_travel.'.$point, data_get($performance, 'valve_travel.'.$point), 'number', 'sheet-number sheet-inline') }}%
-                                            @endforeach
-                                        </div></td>
+                                        <td colspan="3">{{ $snapshotInput('model.flow_characteristic', $model['flow_characteristic'] ?? '') }}</td>
                                     </tr>
-                                    <tr>
-                                        <td class="datasheet-label">Required Cv / Kv (Min/Norm/Max)</td>
-                                        <td>
-                                            <div class="inline-fields">
-                                            {{ $fieldInput('control_performance.required_capacity.minimum', data_get($performance, 'required_capacity.minimum'), 'number', 'sheet-number') }} /
-                                            {{ $fieldInput('control_performance.required_capacity.normal', data_get($performance, 'required_capacity.normal'), 'number', 'sheet-number') }} /
-                                            {{ $fieldInput('control_performance.required_capacity.maximum', data_get($performance, 'required_capacity.maximum'), 'number', 'sheet-number') }}
-                                            ({{ $fieldInput('control_performance.required_capacity.units', data_get($performance, 'required_capacity.units', 'Cv'), 'text', 'sheet-unit sheet-inline') }})
+                                    <tr class="control-performance-edit-row">
+                                        <td class="datasheet-label">Valve Travel (% Open)</td>
+                                        <td colspan="3">
+                                            <div class="control-performance-range-fields">
+                                                @foreach (['minimum' => 'Minimum', 'normal' => 'Normal', 'maximum' => 'Maximum'] as $point => $label)
+                                                    <div class="control-performance-range-field">
+                                                        <span class="control-performance-range-label">{{ $label }}</span>
+                                                        {{ $fieldInput('control_performance.valve_travel.'.$point, data_get($performance, 'valve_travel.'.$point), 'number') }}
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         </td>
-                                        <td class="datasheet-label">Predicted Noise (dBA)</td>
-                                        <td>{{ $fieldInput('control_performance.predicted_noise', $performance['predicted_noise'] ?? '') }}</td>
                                     </tr>
-                                    <tr><td class="datasheet-label">Selected Rated Cv / Kv</td><td><div class="inline-fields">{{ $fieldInput('control_performance.selected_rated_cv', $performance['selected_rated_cv'] ?? '', 'number', 'sheet-number sheet-inline') }} Cv ({{ $fieldInput('control_performance.selected_rated_kv', $performance['selected_rated_kv'] ?? '', 'number', 'sheet-number sheet-inline') }} Kv)</div></td><td class="datasheet-label">Cavitation / Flashing Status</td><td>{{ $fieldInput('control_performance.cavitation_status', $performance['cavitation_status'] ?? '') }}</td></tr>
+                                    <tr class="control-performance-edit-row">
+                                        <td class="datasheet-label">Required Capacity (Cv / Kv)</td>
+                                        <td colspan="3">
+                                            <div class="control-performance-range-fields control-performance-capacity-fields">
+                                                <div class="control-performance-range-field">
+                                                    <span class="control-performance-range-label">Units</span>
+                                                    {{ $fieldInput('control_performance.required_capacity.units', data_get($performance, 'required_capacity.units', 'Cv')) }}
+                                                </div>
+                                                @foreach (['minimum' => 'Minimum', 'normal' => 'Normal', 'maximum' => 'Maximum'] as $point => $label)
+                                                    <div class="control-performance-range-field">
+                                                        <span class="control-performance-range-label">{{ $label }}</span>
+                                                        {{ $fieldInput('control_performance.required_capacity.'.$point, data_get($performance, 'required_capacity.'.$point), 'number') }}
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="control-performance-edit-row">
+                                        <td class="datasheet-label">Predicted Noise (dBA)</td>
+                                        <td colspan="3">{{ $fieldInput('control_performance.predicted_noise', $performance['predicted_noise'] ?? '') }}</td>
+                                    </tr>
+                                    <tr class="control-performance-edit-row">
+                                        <td class="datasheet-label">Selected Rated Cv</td>
+                                        <td colspan="3">{{ $fieldInput('control_performance.selected_rated_cv', $performance['selected_rated_cv'] ?? '', 'number') }}</td>
+                                    </tr>
+                                    <tr class="control-performance-edit-row">
+                                        <td class="datasheet-label">Selected Rated Kv</td>
+                                        <td colspan="3">{{ $fieldInput('control_performance.selected_rated_kv', $performance['selected_rated_kv'] ?? '', 'number') }}</td>
+                                    </tr>
+                                    <tr class="control-performance-edit-row">
+                                        <td class="datasheet-label">Cavitation / Flashing Status</td>
+                                        <td colspan="3">{{ $fieldInput('control_performance.cavitation_status', $performance['cavitation_status'] ?? '') }}</td>
+                                    </tr>
+                                    <tr class="control-performance-preview-row">
+                                        <td class="datasheet-label">Flow Characteristic</td>
+                                        <td><span data-performance-preview="snapshot_edits[model][flow_characteristic]">—</span></td>
+                                        <td class="datasheet-label">Valve Travel (% Open)</td>
+                                        <td>Min: <span data-performance-preview="datasheet_fields[control_performance][valve_travel][minimum]" data-suffix="%">—</span> &nbsp; Norm: <span data-performance-preview="datasheet_fields[control_performance][valve_travel][normal]" data-suffix="%">—</span> &nbsp; Max: <span data-performance-preview="datasheet_fields[control_performance][valve_travel][maximum]" data-suffix="%">—</span></td>
+                                    </tr>
+                                    <tr class="control-performance-preview-row">
+                                        <td class="datasheet-label">Required Cv / Kv (Min/Norm/Max)</td>
+                                        <td>
+                                            <span data-performance-preview="datasheet_fields[control_performance][required_capacity][minimum]">—</span> /
+                                            <span data-performance-preview="datasheet_fields[control_performance][required_capacity][normal]">—</span> /
+                                            <span data-performance-preview="datasheet_fields[control_performance][required_capacity][maximum]">—</span>
+                                            (<span data-performance-preview="datasheet_fields[control_performance][required_capacity][units]">—</span>)
+                                        </td>
+                                        <td class="datasheet-label">Predicted Noise (dBA)</td>
+                                        <td><span data-performance-preview="datasheet_fields[control_performance][predicted_noise]">—</span></td>
+                                    </tr>
+                                    <tr class="control-performance-preview-row">
+                                        <td class="datasheet-label">Selected Rated Cv / Kv</td>
+                                        <td><span data-performance-preview="datasheet_fields[control_performance][selected_rated_cv]">—</span> Cv (<span data-performance-preview="datasheet_fields[control_performance][selected_rated_kv]">—</span> Kv)</td>
+                                        <td class="datasheet-label">Cavitation / Flashing Status</td>
+                                        <td><span data-performance-preview="datasheet_fields[control_performance][cavitation_status]">—</span></td>
+                                    </tr>
                                 </table>
 
                                 <table class="datasheet-table editor-section actuation-section">
@@ -736,6 +806,7 @@
             const previewModeButton = document.getElementById('editor-mode-preview');
             const editorModeStatus = document.getElementById('editor-mode-status');
             const conditionPreviewFields = editorForm.querySelectorAll('[data-condition-preview]');
+            const controlPerformancePreviewFields = editorForm.querySelectorAll('[data-performance-preview]');
 
             function updateConditionPreview() {
                 conditionPreviewFields.forEach((previewField) => {
@@ -751,11 +822,28 @@
             });
             updateConditionPreview();
 
+            function updateControlPerformancePreview() {
+                controlPerformancePreviewFields.forEach((previewField) => {
+                    const inputName = previewField.dataset.performancePreview;
+                    const input = editorForm.querySelector(`[name="${inputName}"]`);
+                    const value = input && input.value.trim() ? input.value : '';
+                    previewField.textContent = value
+                        ? value + (previewField.dataset.suffix || '')
+                        : '—';
+                });
+            }
+
+            editorForm.querySelectorAll('.control-performance-edit-row input, .control-performance-edit-row select, .control-performance-edit-row textarea').forEach((input) => {
+                input.addEventListener('input', updateControlPerformancePreview);
+            });
+            updateControlPerformancePreview();
+
             function setEditorMode(mode) {
                 const isEditMode = mode === 'edit';
 
                 editorForm.dataset.mode = mode;
                 updateConditionPreview();
+                updateControlPerformancePreview();
                 datasheetSections.inert = !isEditMode;
                 editModeButton.setAttribute('aria-pressed', String(isEditMode));
                 previewModeButton.setAttribute('aria-pressed', String(!isEditMode));
