@@ -50,6 +50,20 @@
         ? $testing['seat_leakage_class']
         : ($model['seat_leakage_class'] ?? null);
     $valueOrDash = fn ($value) => filled($value) ? $value : '—';
+    $combineMaterialDetails = fn ($code, $details) => implode(' — ', array_filter(
+        [$code, $details],
+        fn ($value) => filled($value),
+    ));
+    $combineMechanicalValue = fn ($value, $units) => implode(' — ', array_filter(
+        [$value, $units],
+        fn ($part) => filled($part),
+    ));
+    $defaultEndConnections = filled($dimension['end_connection'] ?? null)
+        ? $dimension['end_connection'].(filled($model['end_connection_standard'] ?? null) ? ' ('.$model['end_connection_standard'].')' : '')
+        : ($model['end_connection_standard'] ?? null);
+    $endConnections = array_key_exists('end_connections', $mechanical)
+        ? $mechanical['end_connections']
+        : $defaultEndConnections;
     $metricValue = fn ($key, $point) => $valueOrDash(data_get($process, $key.'.'.$point));
     $metricUnit = fn ($key, $default = '—') => $valueOrDash(data_get($process, $key.'.units', $default));
     $maximumOutletPressure = $metricValue('outlet_pressure', 'maximum');
@@ -196,16 +210,14 @@
     <table class="data">
         <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
         <tr class="section-title"><th colspan="4">C. VALVE BODY &amp; MECHANICAL CONSTRUCTION</th></tr>
-        <tr><td class="label">Nominal Valve Size (DN / NPS)</td><td>{{ $valueOrDash($nominalSize) }}</td><td class="label">End Connections</td><td>{{ $valueOrDash($dimension['end_connection'] ?? null) }} ({{ $valueOrDash($model['end_connection_standard'] ?? null) }})</td></tr>
+        <tr><td class="label">Nominal Valve Size (DN / NPS)</td><td>{{ $valueOrDash($nominalSize) }}</td><td class="label">End Connections</td><td>{{ $valueOrDash($endConnections) }}</td></tr>
         <tr><td class="label">Pressure Class / Rating</td><td>{{ $valueOrDash($dimension['pressure_class'] ?? null) }}</td><td class="label">Flange Facing &amp; Finish</td><td>{{ $valueOrDash(filled($model['flange_facing_finish'] ?? null) ? $model['flange_facing_finish'] : ($mechanical['flange_facing_finish'] ?? null)) }}</td></tr>
         <tr><td class="label">Design Standard (API / ASME)</td><td>{{ $valueOrDash($model['design_standard'] ?? null) }}</td><td class="label">Bonnet / Cover Type</td><td>{{ $valueOrDash(filled($model['bonnet_cover_type'] ?? null) ? $model['bonnet_cover_type'] : ($mechanical['bonnet_cover_type'] ?? null)) }}</td></tr>
         <tr><td class="label">Face-to-Face Standard</td><td>{{ $valueOrDash($model['face_to_face_standard'] ?? null) }}</td><td class="label">Bore / Port Configuration</td><td>{{ $valueOrDash(filled($model['bore_port_configuration'] ?? null) ? $model['bore_port_configuration'] : ($mechanical['bore_port_configuration'] ?? null)) }}</td></tr>
         @foreach ($repeatableRows['additional_mechanical_specs'] as $row)
             <tr>
                 <td class="label">{{ $valueOrDash($row['specification'] ?? null) }}</td>
-                <td>{{ $valueOrDash($row['value'] ?? null) }}</td>
-                <td class="label">Units</td>
-                <td>{{ $valueOrDash($row['units'] ?? null) }}</td>
+                <td colspan="3">{{ $valueOrDash($combineMechanicalValue($row['value'] ?? null, $row['units'] ?? null)) }}</td>
             </tr>
         @endforeach
     </table>
@@ -215,19 +227,27 @@
         <tr class="section-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
         <tr class="subhead"><td>S. No.</td><td>Part name</td><td>Material details</td></tr>
         @forelse ($bom as $row)
+            @php
+                $materialDetails = array_key_exists('material_details', $row)
+                    ? $row['material_details']
+                    : $combineMaterialDetails($row['material_code'] ?? null, $row['material_name'] ?? null);
+            @endphp
             <tr>
                 <td class="center">{{ $loop->iteration }}</td>
                 <td class="label">{{ $row['part_name'] }}</td>
-                <td>{{ $row['material_code'] }} — {{ $row['material_name'] }}</td>
+                <td>{{ $valueOrDash($materialDetails) }}</td>
             </tr>
         @empty
             <tr><td colspan="3" class="center">No BOM materials configured</td></tr>
         @endforelse
         @foreach ($repeatableRows['additional_bom_items'] as $row)
+            @php
+                $materialDetails = $combineMaterialDetails($row['material_code'] ?? null, $row['material_details'] ?? null);
+            @endphp
             <tr>
                 <td class="center">{{ count($bom) + $loop->iteration }}</td>
                 <td class="label">{{ $valueOrDash($row['part_name'] ?? null) }}</td>
-                <td>{{ $valueOrDash($row['material_code'] ?? null) }} — {{ $valueOrDash($row['material_details'] ?? null) }}</td>
+                <td>{{ $valueOrDash($materialDetails) }}</td>
             </tr>
         @endforeach
     </table>
@@ -317,12 +337,11 @@
     </table>
     @if ($repeatableRows['additional_quality_planning'] !== [])
         <table class="data">
-            <tr class="subhead"><td>Planning Item</td><td>Requirement / Notes</td><td>Due Date</td></tr>
+            <tr class="subhead"><td>Planning Item</td><td>Requirement / Notes</td></tr>
             @foreach ($repeatableRows['additional_quality_planning'] as $row)
                 <tr>
                     <td class="label">{{ $valueOrDash($row['item'] ?? null) }}</td>
                     <td>{{ $valueOrDash($row['requirement_notes'] ?? null) }}</td>
-                    <td>{{ $valueOrDash($row['due_date'] ?? null) }}</td>
                 </tr>
             @endforeach
         </table>

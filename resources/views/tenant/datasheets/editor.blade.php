@@ -121,6 +121,14 @@
     };
     $snapshotInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('snapshot_edits', $path, $value, $type, $classes);
     $fieldInput = fn (string $path, mixed $value = null, string $type = 'text', string $classes = ''): \Illuminate\Support\HtmlString => $input('datasheet_fields', $path, $value, $type, $classes);
+    $combineMaterialDetails = fn ($code, $details) => implode(' — ', array_filter(
+        [$code, $details],
+        fn ($value) => filled($value),
+    ));
+    $combineMechanicalValue = fn ($value, $units) => implode(' — ', array_filter(
+        [$value, $units],
+        fn ($part) => filled($part),
+    ));
     $metricValue = fn (string $key, string $point) => data_get($process, $key.'.'.$point);
     $metricUnit = fn (string $key, string $default = '') => data_get($process, $key.'.units', $default);
     $nominalSizeParts = [];
@@ -138,6 +146,12 @@
     $nominalSize = array_key_exists('nominal_size', $mechanical)
         ? $mechanical['nominal_size']
         : implode(' / ', $nominalSizeParts);
+    $defaultEndConnections = filled($dimension['end_connection'] ?? null)
+        ? $dimension['end_connection'].(filled($model['end_connection_standard'] ?? null) ? ' ('.$model['end_connection_standard'].')' : '')
+        : ($model['end_connection_standard'] ?? null);
+    $endConnections = array_key_exists('end_connections', $mechanical)
+        ? $mechanical['end_connections']
+        : $defaultEndConnections;
     $maximumOutletPressure = data_get($process, 'outlet_pressure.maximum');
     $processValueOrDash = fn (string $key, string $point) => filled($metricValue($key, $point))
         ? $metricValue($key, $point)
@@ -174,6 +188,8 @@
             .repeatable-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: start; gap: 8px; }
             .repeatable-control-fields { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
             .repeatable-accessory-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; }
+            .repeatable-mechanical-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto; }
+            .repeatable-quality-planning-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto; }
             .repeatable-input-with-remove { display: flex; align-items: center; gap: 4px; min-width: 0; }
             .repeatable-input-with-remove .sheet-input { flex: 1 1 auto; }
             .repeatable-add-button { border: 1px dashed #94a3b8; border-radius: 6px; background: #f8fafc; padding: 6px 10px; color: #1d4ed8; font: inherit; font-size: 13px; font-weight: 600; }
@@ -335,6 +351,8 @@
                 .datasheet-page-container { padding: 10px; }
                 .datasheet-page { min-width: 760px; }
                 #datasheet-editor[data-mode="edit"] .repeatable-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                #datasheet-editor[data-mode="edit"] .repeatable-fields.repeatable-mechanical-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto; }
+                #datasheet-editor[data-mode="edit"] .repeatable-fields.repeatable-quality-planning-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto; }
             }
         </style>
     @endpush
@@ -589,18 +607,20 @@
                                         <td class="datasheet-label">Nominal Valve Size (DN / NPS)</td>
                                         <td>{{ $fieldInput('mechanical.nominal_size', $nominalSize) }}</td>
                                         <td class="datasheet-label">End Connections</td>
-                                        <td><div class="inline-fields">{{ $snapshotInput('dimension.end_connection', $dimension['end_connection'] ?? '', 'text', 'sheet-inline sheet-medium') }} ({{ $snapshotInput('model.end_connection_standard', $model['end_connection_standard'] ?? '', 'text', 'sheet-inline sheet-medium') }})</div></td>
+                                        <td>{{ $fieldInput('mechanical.end_connections', $endConnections) }}</td>
                                     </tr>
                                     <tr><td class="datasheet-label">Pressure Class / Rating</td><td>{{ $snapshotInput('dimension.pressure_class', $dimension['pressure_class'] ?? '') }}</td><td class="datasheet-label">Flange Facing &amp; Finish</td><td>{{ $snapshotInput('model.flange_facing_finish', $model['flange_facing_finish'] ?? '') }}</td></tr>
                                     <tr><td class="datasheet-label">Design Standard (API / ASME)</td><td>{{ $snapshotInput('model.design_standard', $model['design_standard'] ?? '') }}</td><td class="datasheet-label">Bonnet / Cover Type</td><td>{{ $snapshotInput('model.bonnet_cover_type', $model['bonnet_cover_type'] ?? '') }}</td></tr>
                                     <tr><td class="datasheet-label">Face-to-Face Standard</td><td>{{ $snapshotInput('model.face_to_face_standard', $model['face_to_face_standard'] ?? '') }}</td><td class="datasheet-label">Bore / Port Configuration</td><td>{{ $snapshotInput('model.bore_port_configuration', $model['bore_port_configuration'] ?? '') }}</td></tr>
                                     @foreach ($repeatableRows['additional_mechanical_specs'] as $index => $row)
+                                        @php
+                                            $mechanicalValue = $combineMechanicalValue($row['value'] ?? null, $row['units'] ?? null);
+                                        @endphp
                                         <tr data-repeatable-row="additional_mechanical_specs" data-row-index="{{ $index }}">
                                             <td colspan="4">
-                                                <div class="repeatable-fields">
+                                                <div class="repeatable-fields repeatable-mechanical-fields">
                                                     {{ $fieldInput('additional_mechanical_specs.'.$index.'.specification', $row['specification'] ?? '') }}
-                                                    {{ $fieldInput('additional_mechanical_specs.'.$index.'.value', $row['value'] ?? '') }}
-                                                    {{ $fieldInput('additional_mechanical_specs.'.$index.'.units', $row['units'] ?? '') }}
+                                                    {{ $fieldInput('additional_mechanical_specs.'.$index.'.value', $mechanicalValue) }}
                                                     <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_mechanical_specs" aria-label="Remove mechanical specification"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
                                                 </div>
                                             </td>
@@ -614,10 +634,9 @@
                                 <template id="additional_mechanical_specs-template">
                                     <tr data-repeatable-row="additional_mechanical_specs" data-row-index="__INDEX__">
                                         <td colspan="4">
-                                            <div class="repeatable-fields">
+                                            <div class="repeatable-fields repeatable-mechanical-fields">
                                                 <input type="text" name="datasheet_fields[additional_mechanical_specs][__INDEX__][specification]" aria-label="Mechanical specification" placeholder="Specification" maxlength="100" class="sheet-input">
-                                                <input type="text" name="datasheet_fields[additional_mechanical_specs][__INDEX__][value]" aria-label="Mechanical specification value" placeholder="Value" maxlength="255" class="sheet-input">
-                                                <input type="text" name="datasheet_fields[additional_mechanical_specs][__INDEX__][units]" aria-label="Mechanical specification units" placeholder="Units" maxlength="50" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_mechanical_specs][__INDEX__][value]" aria-label="Mechanical specification value" placeholder="Value" maxlength="350" class="sheet-input">
                                                 <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_mechanical_specs" aria-label="Remove mechanical specification"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
                                             </div>
                                         </td>
@@ -630,27 +649,29 @@
                                     <tr id="section-d" class="datasheet-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
                                     <tr class="datasheet-subhead"><td>S. No.</td><td>Part name</td><td>Material details</td></tr>
                                     @forelse ($bom as $index => $row)
+                                        @php
+                                            $materialDetails = array_key_exists('material_details', $row)
+                                                ? $row['material_details']
+                                                : $combineMaterialDetails($row['material_code'] ?? null, $row['material_name'] ?? null);
+                                        @endphp
                                         <tr>
                                             <td class="text-center">{{ $loop->iteration }}</td>
                                             <td class="datasheet-label">{{ $snapshotInput('bom.'.$index.'.part_name', $row['part_name'] ?? '') }}</td>
-                                            <td>
-                                                <div class="inline-fields">
-                                                    {{ $snapshotInput('bom.'.$index.'.material_code', $row['material_code'] ?? '', 'text', 'sheet-inline sheet-medium') }} —
-                                                    {{ $snapshotInput('bom.'.$index.'.material_name', $row['material_name'] ?? '', 'text', 'sheet-inline sheet-flex') }}
-                                                </div>
-                                            </td>
+                                            <td>{{ $snapshotInput('bom.'.$index.'.material_details', $materialDetails) }}</td>
                                         </tr>
                                     @empty
                                         <tr><td colspan="3" class="text-center">No BOM materials configured</td></tr>
                                     @endforelse
                                     @foreach ($repeatableRows['additional_bom_items'] as $index => $row)
+                                        @php
+                                            $materialDetails = $combineMaterialDetails($row['material_code'] ?? null, $row['material_details'] ?? null);
+                                        @endphp
                                         <tr data-repeatable-row="additional_bom_items" data-row-index="{{ $index }}">
                                             <td class="text-center">{{ count($bom) + $loop->iteration }}</td>
                                             <td>{{ $fieldInput('additional_bom_items.'.$index.'.part_name', $row['part_name'] ?? '') }}</td>
                                             <td>
                                                 <div class="inline-fields">
-                                                    {{ $fieldInput('additional_bom_items.'.$index.'.material_code', $row['material_code'] ?? '', 'text', 'sheet-inline sheet-medium') }} —
-                                                    {{ $fieldInput('additional_bom_items.'.$index.'.material_details', $row['material_details'] ?? '', 'text', 'sheet-inline sheet-flex') }}
+                                                    {{ $fieldInput('additional_bom_items.'.$index.'.material_details', $materialDetails, 'text', 'sheet-inline sheet-flex') }}
                                                     <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_bom_items" aria-label="Remove BOM item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
                                                 </div>
                                             </td>
@@ -667,8 +688,7 @@
                                         <td><input type="text" name="datasheet_fields[additional_bom_items][__INDEX__][part_name]" aria-label="Additional BOM part name" placeholder="Part name" maxlength="255" class="sheet-input"></td>
                                         <td>
                                             <div class="inline-fields">
-                                                <input type="text" name="datasheet_fields[additional_bom_items][__INDEX__][material_code]" aria-label="Additional BOM material code" placeholder="Material code" maxlength="100" class="sheet-input sheet-inline sheet-medium"> —
-                                                <input type="text" name="datasheet_fields[additional_bom_items][__INDEX__][material_details]" aria-label="Additional BOM material details" placeholder="Material details" maxlength="255" class="sheet-input sheet-inline sheet-flex">
+                                                <input type="text" name="datasheet_fields[additional_bom_items][__INDEX__][material_details]" aria-label="Additional BOM material details" placeholder="Material details" maxlength="500" class="sheet-input sheet-inline sheet-flex">
                                                 <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_bom_items" aria-label="Remove BOM item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
                                             </div>
                                         </td>
@@ -931,10 +951,9 @@
                                     @foreach ($repeatableRows['additional_quality_planning'] as $index => $row)
                                         <tr data-repeatable-row="additional_quality_planning" data-row-index="{{ $index }}">
                                             <td colspan="2">
-                                                <div class="repeatable-fields">
+                                                <div class="repeatable-fields repeatable-quality-planning-fields">
                                                     {{ $fieldInput('additional_quality_planning.'.$index.'.item', $row['item'] ?? '') }}
                                                     {{ $fieldInput('additional_quality_planning.'.$index.'.requirement_notes', $row['requirement_notes'] ?? '') }}
-                                                    {{ $fieldInput('additional_quality_planning.'.$index.'.due_date', $row['due_date'] ?? '', 'date') }}
                                                     <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_quality_planning" aria-label="Remove quality planning item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
                                                 </div>
                                             </td>
@@ -948,10 +967,9 @@
                                 <template id="additional_quality_planning-template">
                                     <tr data-repeatable-row="additional_quality_planning" data-row-index="__INDEX__">
                                         <td colspan="2">
-                                            <div class="repeatable-fields">
+                                            <div class="repeatable-fields repeatable-quality-planning-fields">
                                                 <input type="text" name="datasheet_fields[additional_quality_planning][__INDEX__][item]" aria-label="Quality planning item" placeholder="Planning item" maxlength="100" class="sheet-input">
                                                 <input type="text" name="datasheet_fields[additional_quality_planning][__INDEX__][requirement_notes]" aria-label="Quality planning requirement or notes" placeholder="Requirement / notes" maxlength="255" class="sheet-input">
-                                                <input type="date" name="datasheet_fields[additional_quality_planning][__INDEX__][due_date]" aria-label="Quality planning due date" class="sheet-input">
                                                 <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_quality_planning" aria-label="Remove quality planning item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
                                             </div>
                                         </td>
