@@ -305,6 +305,10 @@
             #datasheet-editor[data-mode="edit"] .datasheet-table.revision-section tr {
                 grid-template-columns: repeat(6, minmax(90px, 1fr));
             }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section.revision-section {
+                border: 0;
+                border-radius: 0;
+            }
             #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section .sheet-input {
                 width: 100%;
                 min-width: 0;

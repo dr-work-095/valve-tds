@@ -128,6 +128,16 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
   and validated, saved in the immutable snapshot, and never written to reusable valve
   models; each section is capped at 20 added rows. Additional control cases are only
   accepted for Control / Modulating models.
+- Refined repeatable editor rows to match their datasheet fields: Section C uses
+  specification and value (with units included in the value), BOM rows use one
+  combined material-details input, and additional Section H planning rows contain
+  only an item and requirement/notes (no extra date field).
+- End Connections is one editable, datasheet-specific value combining the selected
+  dimension connection and model standard by default; custom BOM, mechanical, and
+  connection edits do not change reusable catalog records.
+- Repeatable-row remove controls use a circular pale-red Lucide minus icon. The
+  revision sign-off table has no outer border in editor mode while retaining its
+  internal row divider.
 - The PDF follows the industrial datasheet template with identification, operating
   conditions, mechanical construction, BOM, control performance, actuation,
   testing/compliance, quality/project planning, and revision sign-off sections.
@@ -143,7 +153,7 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
 
 Focused configurator and PDF suites pass for dynamic quota boundaries, snapshot
 immutability, cross-model validation, revision linkage, quality-planning and
-repeatable-row validation/persistence, and editor/PDF rendering (15 tests, 321
+repeatable-row validation/persistence, and editor/PDF rendering (15 tests, 351
 assertions). Browser interaction checks also confirmed add/remove behavior and
 unique indexes across Sections B–H, and that reaching 20 rows disables Add until a
 row is removed. A manual PDF render with the maximum rows produced five pages with
@@ -167,12 +177,21 @@ dynamic page numbering.
 - Enter values for ITP, TPI, witness/hold points, required quality documents, and
   planning dates; confirm invalid statuses/dates are rejected, valid values are
   frozen in the datasheet snapshot, and each parameter renders on its own PDF row.
+  Confirm additional Section H planning rows have only item and requirement/notes,
+  while the section's dedicated date fields remain available.
 - Add and remove rows in each Section B–H group; confirm remaining field names stay
   unique after deletion, the 20-row limit disables Add, and removing a row enables it
   again. Confirm the server rejects excess rows and unrecognized fields.
 - Submit added rows in Sections B–H and confirm they persist in the datasheet snapshot
   without changing the reusable valve model. Confirm extra control cases are rejected
   for non-modulating models.
+- Confirm Section C additional rows have only specification and value, BOM rows have
+  one material-details field, and End Connections has one editable combined field.
+  Verify existing values are preserved when fields are combined and generated PDFs
+  show the same values.
+- In editor mode, confirm the revision sign-off table has no outer border while its
+  internal row divider remains; confirm remove controls use circular pale-red minus
+  icons.
 - Add enough rows to exceed the original two-page layout; confirm all rows render
   without clipping or splitting and the PDF footer shows the correct page/total.
 - Confirm control-performance inputs and PDF section are only shown for
