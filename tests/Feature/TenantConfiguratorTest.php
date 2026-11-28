@@ -148,6 +148,7 @@ class TenantConfiguratorTest extends TestCase
             'client_name' => 'Original Client',
             'project_reference' => 'TEND-1',
             'document_number' => 'TDS-TEST',
+            'document_revision' => 'Rev 3',
             'valve_model_id' => $model->id,
             'dimension_id' => $dimension->id,
             'bom_materials' => [[
@@ -246,6 +247,7 @@ class TenantConfiguratorTest extends TestCase
                     'other_compliance' => '',
                 ],
                 'revision' => [
+                    'date' => '2026-11-27',
                     'description' => 'Issued for Design / Inquiry',
                     'prepared_by' => 'R. Patel',
                     'checked_by' => 'S. Mehta',
@@ -258,6 +260,8 @@ class TenantConfiguratorTest extends TestCase
         $original = GeneratedDatasheet::firstOrFail();
         $original->update(['status' => 'generated']);
         $snapshot = $original->selected_specs;
+        $this->assertSame('Rev 3', $original->revision);
+        $this->assertSame('2026-11-27', $snapshot['datasheet_fields']['revision']['date']);
         $this->assertSame('Control / Modulating', $snapshot['model']['valve_category']);
         $this->assertSame('Raised face', $snapshot['model']['flange_facing_finish']);
         $this->assertSame('Bolted bonnet', $snapshot['model']['bonnet_cover_type']);
@@ -285,12 +289,19 @@ class TenantConfiguratorTest extends TestCase
         ])->render();
         $this->assertStringContainsString('FCV-204', $pdfHtml);
         $this->assertStringContainsString('Original Client', $pdfHtml);
+        $this->assertStringContainsString('<tr><td>Revision:</td><td>Rev 3</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td>Document Status:</td><td>Issued for Inquiry</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td>Date:</td><td>2026-11-27</td></tr>', $pdfHtml);
         $this->assertStringContainsString('Valve Type / Pattern', $pdfHtml);
         $this->assertStringContainsString('Gate / Gate Ready', $pdfHtml);
         $this->assertStringContainsString('PROCESS &amp; OPERATING CONDITIONS', $pdfHtml);
-        $this->assertStringContainsString('Density / Specific<br>Gravity / MW', $pdfHtml);
-        $this->assertStringContainsString('950 / 0.95 / 18', $pdfHtml);
-        $this->assertStringContainsString('0.3 / 1.4', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Density</td><td class="center">kg/m3</td><td class="center">950</td><td class="center">930</td><td class="center">910</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Specific Gravity</td><td class="center">—</td><td class="center">0.95</td><td class="center">0.93</td><td class="center">0.91</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Molecular Weight</td><td class="center">g/mol</td><td class="center">18</td><td class="center">18</td><td class="center">18</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Viscosity</td><td class="center">cP</td><td class="center">0.3</td><td class="center">0.2</td><td class="center">0.1</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<tr><td class="label">Vapor Pressure (P<sub>v</sub>)</td><td class="center">bar(a)</td><td class="center">1.4</td><td class="center">3.1</td><td class="center">4.1</td></tr>', $pdfHtml);
+        $this->assertStringNotContainsString('Density / Specific<br>Gravity / MW', $pdfHtml);
+        $this->assertStringNotContainsString('Viscosity / Vapor<br>Pressure', $pdfHtml);
         $this->assertStringContainsString('Shut-off: 45', $pdfHtml);
         $this->assertStringContainsString('Equal Percentage', $pdfHtml);
         $this->assertStringContainsString('Bolted bonnet', $pdfHtml);
@@ -318,7 +329,7 @@ class TenantConfiguratorTest extends TestCase
         $this->assertStringContainsString('<tr><td class="label">ISO 15848-1 (Fugitive Emissions)</td><td>Applicable</td></tr>', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">SIL Certified</td><td>NIL</td></tr>', $pdfHtml);
         $this->assertStringNotContainsString('□ NACE MR0175', $pdfHtml);
-        $this->assertStringContainsString('<td class="center">0</td>', $pdfHtml);
+        $this->assertStringContainsString('<td class="center">3</td>', $pdfHtml);
         $this->assertStringContainsString('Page 1 of 2', $pdfHtml);
         $this->assertStringContainsString('Page 2 of 2', $pdfHtml);
         $this->assertStringNotContainsString('Selected Dimension Measurements', $pdfHtml);
@@ -344,7 +355,7 @@ class TenantConfiguratorTest extends TestCase
             ->assertRedirect(route('tenant.datasheets.index'));
 
         tenancy()->initialize($tenant);
-        $revision = GeneratedDatasheet::where('revision', 'Rev 1')->firstOrFail();
+        $revision = GeneratedDatasheet::where('revision', 'Rev 4')->firstOrFail();
         $this->assertSame('TDS-TEST', $revision->document_number);
         $this->assertSame($original->id, $revision->parent_datasheet_id);
         $this->assertSame($snapshot, $revision->selected_specs);
@@ -390,6 +401,36 @@ class TenantConfiguratorTest extends TestCase
                 'material_id' => $inactive->id,
             ]],
         ])->assertSessionHasErrors('dimension_id');
+    }
+
+    public function test_datasheet_rejects_invalid_revision_and_date_values(): void
+    {
+        Queue::fake();
+        [$tenant, $sales] = $this->createTenantUser('sales');
+        $this->prepareTenantDatabase($tenant);
+        [$model, $dimension, $bom] = $this->createReadyModel($tenant);
+
+        $this->actingAs($sales, 'web')->post(route('tenant.datasheets.store'), [
+            'client_name' => 'Invalid Revision Metadata',
+            'document_revision' => 'Revision A',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+            'bom_materials' => [[
+                'bom_template_id' => $bom->id,
+                'material_id' => $bom->standard_material_id,
+            ]],
+            'datasheet_fields' => [
+                'revision' => ['date' => 'next week'],
+            ],
+        ])->assertSessionHasErrors([
+            'document_revision',
+            'datasheet_fields.revision.date',
+        ]);
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, GeneratedDatasheet::count());
+        $this->assertSame(0, Queue::pushed(GenerateDatasheetPdfJob::class)->count());
+        tenancy()->end();
     }
 
     public function test_datasheet_rejects_invalid_process_and_planning_values_and_unknown_accessories(): void
@@ -495,6 +536,14 @@ class TenantConfiguratorTest extends TestCase
             ->assertSee('href="#section-h"', false)
             ->assertSee('class="datasheet-table editor-section document-details-section"', false)
             ->assertSee('>DOCUMENT DETAILS</th>', false)
+            ->assertSee('name="document_revision"', false)
+            ->assertSee('id="document-revision-input"', false)
+            ->assertSee('name="datasheet_fields[revision][date]"', false)
+            ->assertSee('type="date" name="datasheet_fields[revision][date]"', false)
+            ->assertSee('document-project-reference-input', false)
+            ->assertSee('document-detail-edit-label">Revision', false)
+            ->assertSee('document-detail-edit-label">Date', false)
+            ->assertSee('document-detail-preview-label">Project Reference:', false)
             ->assertSee('document-detail-edit-label">Document Status', false)
             ->assertSee('document-detail-edit-label">Project Reference', false)
             ->assertSee('class="document-brand-cell w-[55%]"', false)
@@ -513,6 +562,10 @@ class TenantConfiguratorTest extends TestCase
             ->assertSee('placeholder="Flow Rate"', false)
             ->assertSee('placeholder="Inlet Pressure"', false)
             ->assertSee('placeholder="Specific Gravity"', false)
+            ->assertSee('class="process-condition-edit-row"', false)
+            ->assertSee('data-condition-preview="density.minimum"', false)
+            ->assertSee('Density / Specific Gravity / MW', false)
+            ->assertSee('Vapor Pressure (Pv)', false)
             ->assertDontSee('type="number"', false)
             ->assertSee('placeholder="Custom Fire-safe Standard"', false)
             ->assertSee('placeholder="Witness / Hold Points"', false)

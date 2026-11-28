@@ -18,6 +18,20 @@ class StoreGeneratedDatasheetRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $merge = [];
+        $merge['document_revision'] = $this->input('document_revision', 'Rev 0');
+
+        $datasheetFields = $this->input('datasheet_fields', []);
+        if (is_array($datasheetFields)) {
+            $revisionFields = $datasheetFields['revision'] ?? [];
+            if (is_array($revisionFields) && ! array_key_exists('date', $revisionFields)) {
+                $revisionFields['date'] = now()->toDateString();
+            }
+            if (is_array($revisionFields)) {
+                $datasheetFields['revision'] = $revisionFields;
+            }
+            $merge['datasheet_fields'] = $datasheetFields;
+        }
+
         $draft = $this->input('draft_id');
         if (is_string($draft) && Str::isUuid($draft)) {
             $selection = session()->get('tenant_datasheet_drafts.'.$draft);
@@ -79,6 +93,7 @@ class StoreGeneratedDatasheetRequest extends FormRequest
             'client_name' => ['required', 'string', 'max:255'],
             'project_reference' => ['nullable', 'string', 'max:255'],
             'document_number' => ['nullable', 'string', 'max:100'],
+            'document_revision' => ['required', 'string', 'max:10', 'regex:/\ARev [0-9]{1,6}\z/'],
             'valve_model_id' => ['required', 'integer', 'exists:tenant.valve_models,id'],
             'dimension_id' => ['required', 'integer', 'exists:tenant.valve_dimensions,id'],
             'draft_id' => ['nullable', 'uuid'],
@@ -221,7 +236,8 @@ class StoreGeneratedDatasheetRequest extends FormRequest
             'datasheet_fields.quality_planning.required_on_site_date' => ['nullable', 'date_format:Y-m-d'],
             'datasheet_fields.quality_planning.vendor_document_submission_due_date' => ['nullable', 'date_format:Y-m-d'],
             'datasheet_fields.quality_planning.inspection_fat_target_date' => ['nullable', 'date_format:Y-m-d'],
-            'datasheet_fields.revision' => ['nullable', 'array:description,prepared_by,checked_by,approved_by'],
+            'datasheet_fields.revision' => ['required', 'array:date,description,prepared_by,checked_by,approved_by'],
+            'datasheet_fields.revision.date' => ['required', 'date_format:Y-m-d'],
             'datasheet_fields.revision.description' => ['nullable', 'string', 'max:255'],
             'datasheet_fields.revision.prepared_by' => ['nullable', 'string', 'max:255'],
             'datasheet_fields.revision.checked_by' => ['nullable', 'string', 'max:255'],

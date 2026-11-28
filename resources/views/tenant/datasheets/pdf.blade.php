@@ -12,6 +12,7 @@
     $actuation = $fields['actuation'] ?? [];
     $testing = $fields['testing_compliance'] ?? [];
     $revision = $fields['revision'] ?? [];
+    $revisionDate = $revision['date'] ?? $datasheet->created_at?->format('Y-m-d');
     $accessories = $actuation['mounted_accessories'] ?? [];
     $compliance = $testing['special_compliance'] ?? [];
     $legacyFireSafeSelected = is_array($compliance)
@@ -35,8 +36,6 @@
     $valueOrDash = fn ($value) => filled($value) ? $value : '—';
     $metricValue = fn ($key, $point) => $valueOrDash(data_get($process, $key.'.'.$point));
     $metricUnit = fn ($key, $default = '—') => $valueOrDash(data_get($process, $key.'.units', $default));
-    $combinedMetricValues = fn ($keys, $point) => implode(' / ', array_map(fn ($key) => $metricValue($key, $point), $keys));
-    $combinedMetricUnits = fn ($keys, $defaults) => implode(' / ', array_map(fn ($key) => $metricUnit($key, $defaults[$key] ?? '—'), $keys));
     $maximumOutletPressure = $metricValue('outlet_pressure', 'maximum');
     if (filled(data_get($process, 'outlet_pressure.shutoff_delta_p'))) {
         $maximumOutletPressure .= ' (Shut-off: '.data_get($process, 'outlet_pressure.shutoff_delta_p').')';
@@ -136,8 +135,10 @@
                 <table class="meta-table">
                     <tr><td>Document No.:</td><td>{{ $datasheet->document_number }}</td></tr>
                     <tr><td>Client:</td><td>{{ $valueOrDash($datasheet->client_name) }}</td></tr>
-                    <tr><td>Revision / Status:</td><td>{{ $datasheet->revision }} — {{ $valueOrDash($fields['document_status'] ?? null) }}</td></tr>
-                    <tr><td>Date / Project Ref.:</td><td>{{ $datasheet->created_at?->format('Y-m-d') }} / {{ $valueOrDash($snapshot['project_reference'] ?? null) }}</td></tr>
+                    <tr><td>Revision:</td><td>{{ $datasheet->revision }}</td></tr>
+                    <tr><td>Document Status:</td><td>{{ $valueOrDash($fields['document_status'] ?? null) }}</td></tr>
+                    <tr><td>Date:</td><td>{{ $valueOrDash($revisionDate) }}</td></tr>
+                    <tr><td>Project Reference:</td><td>{{ $valueOrDash($snapshot['project_reference'] ?? null) }}</td></tr>
                 </table>
             </td>
         </tr>
@@ -161,8 +162,11 @@
         <tr><td class="label">Inlet Pressure (P<sub>1</sub>)</td><td class="center">{{ $metricUnit('inlet_pressure', 'bar(g)') }}</td><td class="center">{{ $metricValue('inlet_pressure', 'minimum') }}</td><td class="center">{{ $metricValue('inlet_pressure', 'normal') }}</td><td class="center">{{ $metricValue('inlet_pressure', 'maximum') }}</td></tr>
         <tr><td class="label">Outlet Pressure (P<sub>2</sub>) /<br>Shut-off ΔP</td><td class="center">{{ $metricUnit('outlet_pressure', 'bar(g)') }}</td><td class="center">{{ $metricValue('outlet_pressure', 'minimum') }}</td><td class="center">{{ $metricValue('outlet_pressure', 'normal') }}</td><td class="center">{{ $maximumOutletPressure }}</td></tr>
         <tr><td class="label">Operating<br>Temperature (T<sub>1</sub>)</td><td class="center">{{ $metricUnit('operating_temperature', '°C') }}</td><td class="center">{{ $metricValue('operating_temperature', 'minimum') }}</td><td class="center">{{ $metricValue('operating_temperature', 'normal') }}</td><td class="center">{{ $metricValue('operating_temperature', 'maximum') }}</td></tr>
-        <tr><td class="label">Density / Specific<br>Gravity / MW</td><td class="center">{{ $combinedMetricUnits(['density', 'specific_gravity', 'molecular_weight'], ['density' => 'kg/m³', 'specific_gravity' => '—']) }}</td><td class="center">{{ $combinedMetricValues(['density', 'specific_gravity', 'molecular_weight'], 'minimum') }}</td><td class="center">{{ $combinedMetricValues(['density', 'specific_gravity', 'molecular_weight'], 'normal') }}</td><td class="center">{{ $combinedMetricValues(['density', 'specific_gravity', 'molecular_weight'], 'maximum') }}</td></tr>
-        <tr><td class="label">Viscosity / Vapor<br>Pressure (P<sub>v</sub>)</td><td class="center">{{ $combinedMetricUnits(['viscosity', 'vapor_pressure'], ['viscosity' => 'cP', 'vapor_pressure' => 'bar(a)']) }}</td><td class="center">{{ $combinedMetricValues(['viscosity', 'vapor_pressure'], 'minimum') }}</td><td class="center">{{ $combinedMetricValues(['viscosity', 'vapor_pressure'], 'normal') }}</td><td class="center">{{ $combinedMetricValues(['viscosity', 'vapor_pressure'], 'maximum') }}</td></tr>
+        <tr><td class="label">Density</td><td class="center">{{ $metricUnit('density', 'kg/m³') }}</td><td class="center">{{ $metricValue('density', 'minimum') }}</td><td class="center">{{ $metricValue('density', 'normal') }}</td><td class="center">{{ $metricValue('density', 'maximum') }}</td></tr>
+        <tr><td class="label">Specific Gravity</td><td class="center">—</td><td class="center">{{ $metricValue('specific_gravity', 'minimum') }}</td><td class="center">{{ $metricValue('specific_gravity', 'normal') }}</td><td class="center">{{ $metricValue('specific_gravity', 'maximum') }}</td></tr>
+        <tr><td class="label">Molecular Weight</td><td class="center">{{ $metricUnit('molecular_weight', 'g/mol') }}</td><td class="center">{{ $metricValue('molecular_weight', 'minimum') }}</td><td class="center">{{ $metricValue('molecular_weight', 'normal') }}</td><td class="center">{{ $metricValue('molecular_weight', 'maximum') }}</td></tr>
+        <tr><td class="label">Viscosity</td><td class="center">{{ $metricUnit('viscosity', 'cP') }}</td><td class="center">{{ $metricValue('viscosity', 'minimum') }}</td><td class="center">{{ $metricValue('viscosity', 'normal') }}</td><td class="center">{{ $metricValue('viscosity', 'maximum') }}</td></tr>
+        <tr><td class="label">Vapor Pressure (P<sub>v</sub>)</td><td class="center">{{ $metricUnit('vapor_pressure', 'bar(a)') }}</td><td class="center">{{ $metricValue('vapor_pressure', 'minimum') }}</td><td class="center">{{ $metricValue('vapor_pressure', 'normal') }}</td><td class="center">{{ $metricValue('vapor_pressure', 'maximum') }}</td></tr>
         <tr><td class="label">Design Pressure /<br>Design Temp.</td><td class="center">—</td><td colspan="3">{{ $valueOrDash($process['design_pressure'] ?? null) }} @if (filled($process['design_temperature'] ?? null)) @ {{ $process['design_temperature'] }} @endif</td></tr>
     </table>
 
@@ -251,7 +255,7 @@
         <tr><th>Rev</th><th>Date</th><th>Revision Description</th><th>Prepared By</th><th>Checked By</th><th>Approved By</th></tr>
         <tr>
             <td class="center">{{ $revisionNumber }}</td>
-            <td class="center">{{ $datasheet->created_at?->format('Y-m-d') }}</td>
+            <td class="center">{{ $valueOrDash($revisionDate) }}</td>
             <td class="center">{{ $valueOrDash($revision['description'] ?? null) }}</td>
             <td class="center">{{ $valueOrDash($revision['prepared_by'] ?? null) }}</td>
             <td class="center">{{ $valueOrDash($revision['checked_by'] ?? null) }}</td>

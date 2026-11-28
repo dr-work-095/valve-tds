@@ -34,6 +34,13 @@
     );
     $fireSafeOtherSelected = $fireSafeTestStandard === \App\Enums\FireSafeTestStandard::Other->value;
     $revision = $fields['revision'] ?? [];
+    $documentRevision = old('document_revision', 'Rev 0');
+    $documentRevision = is_string($documentRevision) ? $documentRevision : '';
+    $submittedRevisionDate = old('datasheet_fields.revision.date', $revision['date'] ?? $revisionDate);
+    $revisionDate = is_string($submittedRevisionDate) ? $submittedRevisionDate : '';
+    $revisionNumber = preg_match('/\ARev ([0-9]{1,6})\z/', $documentRevision, $revisionMatches) === 1
+        ? $revisionMatches[1]
+        : '—';
     $accessories = old('datasheet_fields.actuation.mounted_accessories', $actuation['mounted_accessories'] ?? []);
     $category = old('snapshot_edits.model.valve_category', $model['valve_category'] ?? '');
     $input = function (
@@ -116,7 +123,12 @@
         ? $mechanical['nominal_size']
         : implode(' / ', $nominalSizeParts);
     $maximumOutletPressure = data_get($process, 'outlet_pressure.maximum');
-    $revisionNumber = '0';
+    $processValueOrDash = fn (string $key, string $point) => filled($metricValue($key, $point))
+        ? $metricValue($key, $point)
+        : '—';
+    $processUnitOrDash = fn (string $key, string $default) => filled($metricUnit($key, $default))
+        ? $metricUnit($key, $default)
+        : '—';
 @endphp
 
 <x-layouts.dashboard :page-title="'Edit datasheet'" :admin-mode="false" :tenant="$tenant" :user="$user" :focus-editor="true">
@@ -205,6 +217,8 @@
             #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr {
                 grid-template-columns: minmax(150px, 1.3fr) minmax(90px, .7fr) repeat(3, minmax(95px, 1fr));
             }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr.process-condition-preview-row,
+            #datasheet-editor[data-mode="preview"] .datasheet-table.process-conditions-section tr.process-condition-edit-row { display: none; }
             #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr.datasheet-subhead {
                 background: #f8fafc;
                 color: #475569;
@@ -254,17 +268,12 @@
             }
             #datasheet-editor[data-mode="edit"] .document-detail-preview-label { display: none; }
             #datasheet-editor[data-mode="edit"] .document-project-reference-fields {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 6px;
-                white-space: normal;
+                width: 100%;
             }
             #datasheet-editor[data-mode="edit"] .document-details-section { margin-bottom: 16px; }
             #datasheet-editor[data-mode="preview"] .document-details-section .datasheet-title,
             #datasheet-editor[data-mode="preview"] .document-detail-edit-label { display: none; }
             #datasheet-editor[data-mode="preview"] .document-detail-preview-label { display: inline; }
-            #datasheet-editor[data-mode="preview"] .document-project-reference-fields { display: inline-flex; }
             #datasheet-editor[data-mode="preview"] .sheet-input { min-height: 0; border-color: transparent; border-radius: 0; background: transparent; color: inherit; padding: 2px 3px; }
             #datasheet-editor[data-mode="preview"] select.sheet-input { appearance: none; }
             #datasheet-editor[data-mode="preview"] textarea.sheet-input { resize: none; }
@@ -349,10 +358,16 @@
                                                     <td>{{ $topInput('client_name', $selection['client_name']) }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Document Status</span><span class="document-detail-preview-label">Revision / Status:</span></td>
-                                                    <td><div class="inline-fields document-status-fields">Rev 0 — {{ $fieldInput('document_status', $fields['document_status'] ?? 'Issued for Inquiry', 'text', 'sheet-inline sheet-flex') }}</div></td>
-                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Project Reference</span><span class="document-detail-preview-label">Date / Project Ref.:</span></td>
-                                                    <td><div class="inline-fields document-project-reference-fields">{{ $revisionDate }} / {{ $topInput('project_reference', $selection['project_reference'] ?? '', 'sheet-inline sheet-flex') }}</div></td>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Revision</span><span class="document-detail-preview-label">Revision:</span></td>
+                                                    <td><input id="document-revision-input" type="text" name="document_revision" value="{{ $documentRevision }}" aria-label="Revision" maxlength="10" required placeholder="Rev 0" class="sheet-input" @if ($errors->has('document_revision')) aria-invalid="true" @endif></td>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Document Status</span><span class="document-detail-preview-label">Document Status:</span></td>
+                                                    <td>{{ $fieldInput('document_status', $fields['document_status'] ?? 'Issued for Inquiry') }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Date</span><span class="document-detail-preview-label">Date:</span></td>
+                                                    <td>{{ $fieldInput('revision.date', $revisionDate, 'date') }}</td>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Project Reference</span><span class="document-detail-preview-label">Project Reference:</span></td>
+                                                    <td><div class="document-project-reference-fields">{{ $topInput('project_reference', $selection['project_reference'] ?? '', 'document-project-reference-input') }}</div></td>
                                                 </tr>
                                             </table>
                                         </td>
@@ -424,38 +439,57 @@
                                             @endforeach
                                         </tr>
                                     @endforeach
-                                    <tr>
+                                    @foreach ([
+                                        'density' => ['Density', 'kg/m³'],
+                                        'specific_gravity' => ['Specific Gravity', null],
+                                        'molecular_weight' => ['Molecular Weight', 'g/mol'],
+                                        'viscosity' => ['Viscosity', 'cP'],
+                                        'vapor_pressure' => ['Vapor Pressure (Pv)', 'bar(a)'],
+                                    ] as $key => [$label, $defaultUnit])
+                                        <tr class="process-condition-edit-row">
+                                            <td class="datasheet-label">{{ $label }}</td>
+                                            <td>
+                                                @if ($defaultUnit === null)
+                                                    <span>—</span>
+                                                @else
+                                                    {{ $fieldInput('process_conditions.'.$key.'.units', $metricUnit($key, $defaultUnit), 'text', 'sheet-unit') }}
+                                                @endif
+                                            </td>
+                                            @foreach (['minimum', 'normal', 'maximum'] as $point)
+                                                <td>{{ $fieldInput('process_conditions.'.$key.'.'.$point, $metricValue($key, $point), 'number', 'sheet-number') }}</td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                    <tr class="process-condition-preview-row">
                                         <td class="datasheet-label">Density / Specific Gravity / MW</td>
-                                        <td>
-                                            <div class="inline-fields">
-                                            {{ $fieldInput('process_conditions.density.units', $metricUnit('density', 'kg/m³'), 'text', 'sheet-unit sheet-inline') }}
+                                        <td class="text-center">
+                                            <span data-condition-preview="density.units">{{ $processUnitOrDash('density', 'kg/m³') }}</span>
                                             / —
-                                            {{ $fieldInput('process_conditions.molecular_weight.units', $metricUnit('molecular_weight', 'g/mol'), 'text', 'sheet-unit sheet-inline') }}
-                                            </div>
+                                            <span data-condition-preview="molecular_weight.units">{{ $processUnitOrDash('molecular_weight', 'g/mol') }}</span>
                                         </td>
                                         @foreach (['minimum', 'normal', 'maximum'] as $point)
-                                            <td><div class="inline-fields">
-                                                {{ $fieldInput('process_conditions.density.'.$point, $metricValue('density', $point), 'number', 'sheet-number sheet-inline') }}
+                                            <td class="text-center">
+                                                <span data-condition-preview="density.{{ $point }}">{{ $processValueOrDash('density', $point) }}</span>
                                                 /
-                                                {{ $fieldInput('process_conditions.specific_gravity.'.$point, $metricValue('specific_gravity', $point), 'number', 'sheet-number sheet-inline') }}
+                                                <span data-condition-preview="specific_gravity.{{ $point }}">{{ $processValueOrDash('specific_gravity', $point) }}</span>
                                                 /
-                                                {{ $fieldInput('process_conditions.molecular_weight.'.$point, $metricValue('molecular_weight', $point), 'number', 'sheet-number sheet-inline') }}
-                                            </div></td>
+                                                <span data-condition-preview="molecular_weight.{{ $point }}">{{ $processValueOrDash('molecular_weight', $point) }}</span>
+                                            </td>
                                         @endforeach
                                     </tr>
-                                    <tr>
+                                    <tr class="process-condition-preview-row">
                                         <td class="datasheet-label">Viscosity / Vapor Pressure (Pv)</td>
-                                        <td><div class="inline-fields">
-                                            {{ $fieldInput('process_conditions.viscosity.units', $metricUnit('viscosity', 'cP'), 'text', 'sheet-unit sheet-inline') }}
+                                        <td class="text-center">
+                                            <span data-condition-preview="viscosity.units">{{ $processUnitOrDash('viscosity', 'cP') }}</span>
                                             /
-                                            {{ $fieldInput('process_conditions.vapor_pressure.units', $metricUnit('vapor_pressure', 'bar(a)'), 'text', 'sheet-unit sheet-inline') }}
-                                        </div></td>
+                                            <span data-condition-preview="vapor_pressure.units">{{ $processUnitOrDash('vapor_pressure', 'bar(a)') }}</span>
+                                        </td>
                                         @foreach (['minimum', 'normal', 'maximum'] as $point)
-                                            <td><div class="inline-fields">
-                                                {{ $fieldInput('process_conditions.viscosity.'.$point, $metricValue('viscosity', $point), 'number', 'sheet-number sheet-inline') }}
+                                            <td class="text-center">
+                                                <span data-condition-preview="viscosity.{{ $point }}">{{ $processValueOrDash('viscosity', $point) }}</span>
                                                 /
-                                                {{ $fieldInput('process_conditions.vapor_pressure.'.$point, $metricValue('vapor_pressure', $point), 'number', 'sheet-number sheet-inline') }}
-                                            </div></td>
+                                                <span data-condition-preview="vapor_pressure.{{ $point }}">{{ $processValueOrDash('vapor_pressure', $point) }}</span>
+                                            </td>
                                         @endforeach
                                     </tr>
                                     <tr><td class="datasheet-label">Design Pressure / Temp.</td><td class="text-center">—</td><td colspan="3"><div class="inline-fields">{{ $fieldInput('process_conditions.design_pressure', $process['design_pressure'] ?? '', 'text', 'sheet-inline sheet-flex') }} @ {{ $fieldInput('process_conditions.design_temperature', $process['design_temperature'] ?? '', 'text', 'sheet-inline sheet-flex') }}</div></td></tr>
@@ -625,8 +659,8 @@
                                     <colgroup><col style="width:10%"><col style="width:18%"><col style="width:24%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup>
                                     <tr class="datasheet-subhead"><th>Rev</th><th>Date</th><th>Revision Description</th><th>Prepared By</th><th>Checked By</th><th>Approved By</th></tr>
                                     <tr>
-                                        <td class="text-center">{{ $revisionNumber }}</td>
-                                        <td class="text-center">{{ $revisionDate }}</td>
+                                        <td id="revision-number-display" class="text-center">{{ $revisionNumber }}</td>
+                                        <td class="text-center"><span id="revision-date-display">{{ $revisionDate }}</span></td>
                                         <td>{{ $fieldInput('revision.description', $revision['description'] ?? 'Issued for Design / Inquiry') }}</td>
                                         <td>{{ $fieldInput('revision.prepared_by', $revision['prepared_by'] ?? '') }}</td>
                                         <td>{{ $fieldInput('revision.checked_by', $revision['checked_by'] ?? '') }}</td>
@@ -655,6 +689,20 @@
             const categorySelect = document.getElementById('snapshot-valve-category');
             const controlSection = document.getElementById('control-performance-section');
             const controlPerformanceNav = document.getElementById('control-performance-nav');
+            const documentRevisionInput = document.getElementById('document-revision-input');
+            const revisionNumberDisplay = document.getElementById('revision-number-display');
+            const revisionDateInput = document.querySelector('input[name="datasheet_fields[revision][date]"]');
+            const revisionDateDisplay = document.getElementById('revision-date-display');
+
+            function updateRevisionMetadataDisplays() {
+                const match = documentRevisionInput.value.match(/^Rev ([0-9]{1,6})$/);
+                revisionNumberDisplay.textContent = match ? match[1] : '—';
+                revisionDateDisplay.textContent = revisionDateInput.value || '—';
+            }
+
+            documentRevisionInput.addEventListener('input', updateRevisionMetadataDisplays);
+            revisionDateInput.addEventListener('input', updateRevisionMetadataDisplays);
+            updateRevisionMetadataDisplays();
 
             function updateControlPerformanceFields() {
                 const isModulating = categorySelect.value === 'Control / Modulating';
@@ -687,11 +735,27 @@
             const editModeButton = document.getElementById('editor-mode-edit');
             const previewModeButton = document.getElementById('editor-mode-preview');
             const editorModeStatus = document.getElementById('editor-mode-status');
+            const conditionPreviewFields = editorForm.querySelectorAll('[data-condition-preview]');
+
+            function updateConditionPreview() {
+                conditionPreviewFields.forEach((previewField) => {
+                    const [parameter, property] = previewField.dataset.conditionPreview.split('.');
+                    const fieldName = `datasheet_fields[process_conditions][${parameter}][${property}]`;
+                    const input = editorForm.querySelector(`[name="${fieldName}"]`);
+                    previewField.textContent = input && input.value.trim() ? input.value : '—';
+                });
+            }
+
+            editorForm.querySelectorAll('.process-condition-edit-row input').forEach((input) => {
+                input.addEventListener('input', updateConditionPreview);
+            });
+            updateConditionPreview();
 
             function setEditorMode(mode) {
                 const isEditMode = mode === 'edit';
 
                 editorForm.dataset.mode = mode;
+                updateConditionPreview();
                 datasheetSections.inert = !isEditMode;
                 editModeButton.setAttribute('aria-pressed', String(isEditMode));
                 previewModeButton.setAttribute('aria-pressed', String(!isEditMode));

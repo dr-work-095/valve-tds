@@ -234,7 +234,7 @@ class DatasheetController extends Controller
 
             $base = $documentNumber;
             $suffix = 1;
-            while (GeneratedDatasheet::where('document_number', $base)->where('revision', 'Rev 0')->exists()) {
+            while (GeneratedDatasheet::where('document_number', $base)->where('revision', $validated['document_revision'])->exists()) {
                 $base = $documentNumber.'-'.$suffix;
                 $suffix++;
             }
@@ -243,7 +243,7 @@ class DatasheetController extends Controller
                 'created_by_user_id' => (int) Auth::guard('web')->id(),
                 'valve_model_id' => (int) $validated['valve_model_id'],
                 'document_number' => $base,
-                'revision' => 'Rev 0',
+                'revision' => $validated['document_revision'],
                 'client_name' => $validated['client_name'],
                 'project_reference' => $validated['project_reference'] ?? null,
                 'selected_specs' => $snapshot,
