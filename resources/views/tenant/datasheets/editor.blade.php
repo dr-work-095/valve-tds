@@ -157,6 +157,114 @@
             #datasheet-editor[data-mode="edit"] .sheet-input.sheet-short { width: 5rem; }
             #datasheet-editor[data-mode="edit"] .sheet-input.sheet-medium { width: 8rem; }
             #datasheet-editor[data-mode="edit"] .sheet-input.sheet-line-size { width: 6rem; }
+            #datasheet-editor[data-mode="edit"] .datasheet-page-container { padding: 0; }
+            #datasheet-editor[data-mode="edit"] .datasheet-scroll { overflow: visible; }
+            #datasheet-editor[data-mode="edit"] .datasheet-page { min-width: 0; max-width: 100%; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section {
+                display: block;
+                overflow: hidden;
+                border: 1px solid #dbe3ee;
+                border-radius: 12px;
+                border-spacing: 0;
+                background: #fff;
+                color: #1e293b;
+                margin-bottom: 16px;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section tbody { display: block; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section colgroup { display: none; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section tr {
+                display: grid;
+                grid-template-columns: minmax(120px, .8fr) minmax(0, 1.2fr) minmax(120px, .8fr) minmax(0, 1.2fr);
+                align-items: center;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section tr:last-child { border-bottom: 0; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section tr.datasheet-title { display: block; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section tr.datasheet-title th {
+                display: block;
+                border: 0;
+                background: #eff6ff;
+                color: #1e40af;
+                padding: 12px 16px !important;
+                font-size: 13px;
+                letter-spacing: .025em;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section td {
+                min-width: 0;
+                border: 0;
+                padding: 10px 12px;
+                overflow-wrap: anywhere;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section td.datasheet-label {
+                background: transparent;
+                color: #475569;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section td[colspan="3"] { grid-column: span 3; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr {
+                grid-template-columns: minmax(150px, 1.3fr) minmax(90px, .7fr) repeat(3, minmax(95px, 1fr));
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr.datasheet-subhead {
+                background: #f8fafc;
+                color: #475569;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr.datasheet-subhead td {
+                text-align: left;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.bom-section tr {
+                grid-template-columns: minmax(60px, .3fr) minmax(140px, .8fr) minmax(0, 2.9fr);
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.quality-planning-section tr {
+                grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.revision-section tr {
+                grid-template-columns: repeat(6, minmax(90px, 1fr));
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section .sheet-input {
+                width: 100%;
+                min-width: 0;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section .sheet-input.sheet-number {
+                width: 100%;
+                min-width: 3.5rem;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section .inline-fields {
+                flex-wrap: wrap;
+                white-space: normal;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section .sheet-input.sheet-inline.sheet-flex {
+                width: auto;
+                flex: 1 1 8rem;
+            }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section .sheet-input.sheet-medium { width: 100%; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section .sheet-input.sheet-short { width: 100%; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section textarea.sheet-input { min-height: 72px; }
+            #datasheet-editor[data-mode="edit"] .document-header-table { display: block; border: 0; border-spacing: 0; }
+            #datasheet-editor[data-mode="edit"] .document-header-table tbody,
+            #datasheet-editor[data-mode="edit"] .document-header-table tr { display: block; }
+            #datasheet-editor[data-mode="edit"] .document-header-table .document-brand-cell { display: none; }
+            #datasheet-editor[data-mode="edit"] .document-header-table .document-details-cell {
+                display: block;
+                width: 100%;
+                border: 0;
+                padding: 0;
+            }
+            #datasheet-editor[data-mode="edit"] .document-detail-preview-label { display: none; }
+            #datasheet-editor[data-mode="edit"] .document-project-reference-fields {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
+                white-space: normal;
+            }
+            #datasheet-editor[data-mode="edit"] .document-details-section { margin-bottom: 16px; }
+            #datasheet-editor[data-mode="preview"] .document-details-section .datasheet-title,
+            #datasheet-editor[data-mode="preview"] .document-detail-edit-label { display: none; }
+            #datasheet-editor[data-mode="preview"] .document-detail-preview-label { display: inline; }
+            #datasheet-editor[data-mode="preview"] .document-project-reference-fields { display: inline-flex; }
             #datasheet-editor[data-mode="preview"] .sheet-input { min-height: 0; border-color: transparent; border-radius: 0; background: transparent; color: inherit; padding: 2px 3px; }
             #datasheet-editor[data-mode="preview"] select.sheet-input { appearance: none; }
             #datasheet-editor[data-mode="preview"] textarea.sheet-input { resize: none; }
@@ -224,24 +332,34 @@
                     <section class="datasheet-page-container p-3 sm:p-5">
                         <div class="datasheet-scroll">
                             <div class="datasheet-page text-[13px] leading-tight text-slate-800 dark:text-slate-100">
-                                <table class="datasheet-table">
+                                <table class="datasheet-table document-header-table">
                                     <tr>
-                                        <td class="w-[55%]">
+                                        <td class="document-brand-cell w-[55%]">
                                             <div class="text-base font-bold tracking-wide">INDUSTRIAL VALVE ENGINEERING<br>DATASHEET</div>
                                             <div class="mt-1 text-[13px] text-slate-600">{{ $company['company_name'] ?? 'Standard Specification Form (Isolation, Automated On/Off & Control Valves)' }}</div>
                                         </td>
-                                        <td class="w-[45%]">
-                                            <table class="w-full border-collapse text-[13px]">
-                                                <tr><td class="w-[36%] border-0 font-semibold">Document No.:</td><td class="border-0">{{ $topInput('document_number', $selection['document_number'] ?? '') }}</td></tr>
-                                                <tr><td class="border-0 font-semibold">Client:</td><td class="border-0">{{ $topInput('client_name', $selection['client_name']) }}</td></tr>
-                                                <tr><td class="border-0 font-semibold">Revision / Status:</td><td class="border-0"><div class="inline-fields">Rev 0 — {{ $fieldInput('document_status', $fields['document_status'] ?? 'Issued for Inquiry', 'text', 'sheet-inline sheet-flex') }}</div></td></tr>
-                                                <tr><td class="border-0 font-semibold">Date / Project Ref.:</td><td class="border-0"><div class="inline-fields">{{ $revisionDate }} / {{ $topInput('project_reference', $selection['project_reference'] ?? '', 'sheet-inline sheet-flex') }}</div></td></tr>
+                                        <td class="document-details-cell w-[45%]">
+                                            <table class="datasheet-table editor-section document-details-section">
+                                                <colgroup><col style="width:20%"><col style="width:30%"><col style="width:20%"><col style="width:30%"></colgroup>
+                                                <tr class="datasheet-title"><th colspan="4">DOCUMENT DETAILS</th></tr>
+                                                <tr>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Document No.</span><span class="document-detail-preview-label">Document No.:</span></td>
+                                                    <td>{{ $topInput('document_number', $selection['document_number'] ?? '') }}</td>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Client Name</span><span class="document-detail-preview-label">Client:</span></td>
+                                                    <td>{{ $topInput('client_name', $selection['client_name']) }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Document Status</span><span class="document-detail-preview-label">Revision / Status:</span></td>
+                                                    <td><div class="inline-fields document-status-fields">Rev 0 — {{ $fieldInput('document_status', $fields['document_status'] ?? 'Issued for Inquiry', 'text', 'sheet-inline sheet-flex') }}</div></td>
+                                                    <td class="datasheet-label"><span class="document-detail-edit-label">Project Reference</span><span class="document-detail-preview-label">Date / Project Ref.:</span></td>
+                                                    <td><div class="inline-fields document-project-reference-fields">{{ $revisionDate }} / {{ $topInput('project_reference', $selection['project_reference'] ?? '', 'sheet-inline sheet-flex') }}</div></td>
+                                                </tr>
                                             </table>
                                         </td>
                                     </tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section identification-section">
                                     <colgroup><col style="width:20%"><col style="width:30%"><col style="width:20%"><col style="width:30%"></colgroup>
                                     <tr id="section-a" class="datasheet-title"><th colspan="4">A. IDENTIFICATION &amp; GENERAL DATA</th></tr>
                                     <tr><td class="datasheet-label">Equipment Tag No.</td><td>{{ $fieldInput('identification.equipment_tag', $identification['equipment_tag'] ?? '') }}</td><td class="datasheet-label">P&amp;ID Drawing No.</td><td>{{ $fieldInput('identification.pid_drawing_number', $identification['pid_drawing_number'] ?? '') }}</td></tr>
@@ -276,7 +394,7 @@
                                     </tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section process-conditions-section">
                                     <colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
                                     <tr id="section-b" class="datasheet-title"><th colspan="5">B. PROCESS &amp; OPERATING CONDITIONS</th></tr>
                                     <tr class="datasheet-subhead"><td>Parameter</td><td>Units</td><td>Minimum</td><td>Normal</td><td>Maximum</td></tr>
@@ -343,7 +461,7 @@
                                     <tr><td class="datasheet-label">Design Pressure / Temp.</td><td class="text-center">—</td><td colspan="3"><div class="inline-fields">{{ $fieldInput('process_conditions.design_pressure', $process['design_pressure'] ?? '', 'text', 'sheet-inline sheet-flex') }} @ {{ $fieldInput('process_conditions.design_temperature', $process['design_temperature'] ?? '', 'text', 'sheet-inline sheet-flex') }}</div></td></tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section mechanical-section">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr id="section-c" class="datasheet-title"><th colspan="4">C. VALVE BODY &amp; MECHANICAL CONSTRUCTION</th></tr>
                                     <tr>
@@ -357,7 +475,7 @@
                                     <tr><td class="datasheet-label">Face-to-Face Standard</td><td>{{ $snapshotInput('model.face_to_face_standard', $model['face_to_face_standard'] ?? '') }}</td><td class="datasheet-label">Bore / Port Configuration</td><td>{{ $snapshotInput('model.bore_port_configuration', $model['bore_port_configuration'] ?? '') }}</td></tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section bom-section">
                                     <colgroup><col style="width:8%"><col style="width:22%"><col style="width:70%"></colgroup>
                                     <tr id="section-d" class="datasheet-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
                                     <tr class="datasheet-subhead"><td>S. No.</td><td>Part name</td><td>Material details</td></tr>
@@ -383,7 +501,7 @@
                     <section class="datasheet-page-container p-3 sm:p-5">
                         <div class="datasheet-scroll">
                             <div class="datasheet-page text-[13px] leading-tight text-slate-800 dark:text-slate-100">
-                                <table id="control-performance-section" class="datasheet-table {{ $category === 'Control / Modulating' ? '' : 'hidden' }}">
+                                <table id="control-performance-section" class="datasheet-table editor-section control-performance-section {{ $category === 'Control / Modulating' ? '' : 'hidden' }}">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr id="section-e" class="datasheet-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>
                                     <tr>
@@ -412,7 +530,7 @@
                                     <tr><td class="datasheet-label">Selected Rated Cv / Kv</td><td><div class="inline-fields">{{ $fieldInput('control_performance.selected_rated_cv', $performance['selected_rated_cv'] ?? '', 'number', 'sheet-number sheet-inline') }} Cv ({{ $fieldInput('control_performance.selected_rated_kv', $performance['selected_rated_kv'] ?? '', 'number', 'sheet-number sheet-inline') }} Kv)</div></td><td class="datasheet-label">Cavitation / Flashing Status</td><td>{{ $fieldInput('control_performance.cavitation_status', $performance['cavitation_status'] ?? '') }}</td></tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section actuation-section">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr id="section-f" class="datasheet-title"><th colspan="4">F. ACTUATION &amp; ACCESSORIES</th></tr>
                                     <tr><td class="datasheet-label">Operator / Actuator Type</td><td>{{ $fieldInput('actuation.actuator_type', $actuation['actuator_type'] ?? '') }}</td><td class="datasheet-label">Supply Air / Power Rating</td><td>{{ $fieldInput('actuation.supply_rating', $actuation['supply_rating'] ?? '') }}</td></tr>
@@ -432,7 +550,7 @@
                                     </tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section testing-compliance-section">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
                                     <tr id="section-g" class="datasheet-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
                                     <tr><td class="datasheet-label">Shell / Body Test Standard</td><td>{{ $fieldInput('testing_compliance.shell_test_standard', $shellTestStandard) }}</td><td class="datasheet-label">Seat / Closure Test Standard</td><td>{{ $fieldInput('testing_compliance.seat_test_standard', $seatTestStandard) }}</td></tr>
@@ -473,7 +591,7 @@
                                     <tr><td class="datasheet-label">Notes / Vendor Remarks</td><td colspan="3"><textarea name="notes" aria-label="Notes / vendor remarks" placeholder="Notes / Vendor Remarks" rows="2" maxlength="5000" class="sheet-input">{{ old('notes', $snapshot['notes'] ?? '') }}</textarea></td></tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section quality-planning-section">
                                     <colgroup><col style="width:34%"><col style="width:66%"></colgroup>
                                     <tr id="section-h" class="datasheet-title"><th colspan="2">H. QUALITY &amp; PROJECT PLANNING</th></tr>
                                     <tr>
@@ -503,7 +621,7 @@
                                     <tr><td class="datasheet-label">Inspection / FAT Target Date</td><td>{{ $fieldInput('quality_planning.inspection_fat_target_date', $qualityPlanning['inspection_fat_target_date'] ?? '', 'date') }}</td></tr>
                                 </table>
 
-                                <table class="datasheet-table">
+                                <table class="datasheet-table editor-section revision-section">
                                     <colgroup><col style="width:10%"><col style="width:18%"><col style="width:24%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup>
                                     <tr class="datasheet-subhead"><th>Rev</th><th>Date</th><th>Revision Description</th><th>Prepared By</th><th>Checked By</th><th>Approved By</th></tr>
                                     <tr>
