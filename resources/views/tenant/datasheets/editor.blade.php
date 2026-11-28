@@ -4,6 +4,22 @@
     $dimension = $snapshot['dimension'] ?? [];
     $bom = $snapshot['bom'] ?? [];
     $fields = $snapshot['datasheet_fields'] ?? [];
+    $repeatableFieldNames = [
+        'additional_process_conditions',
+        'additional_mechanical_specs',
+        'additional_bom_items',
+        'additional_control_cases',
+        'additional_accessories',
+        'additional_compliance',
+        'additional_quality_planning',
+    ];
+    $repeatableRows = [];
+    foreach ($repeatableFieldNames as $repeatableFieldName) {
+        $submittedRows = old('datasheet_fields.'.$repeatableFieldName, $fields[$repeatableFieldName] ?? []);
+        $repeatableRows[$repeatableFieldName] = is_array($submittedRows)
+            ? array_filter($submittedRows, 'is_array')
+            : [];
+    }
     $identification = $fields['identification'] ?? [];
     $process = $fields['process_conditions'] ?? [];
     $mechanical = $fields['mechanical'] ?? [];
@@ -155,6 +171,16 @@
             .sheet-input.sheet-unit { width: 3.5rem; }
             .sheet-input.sheet-flex { width: 1%; min-width: 2.5rem; flex: 1 1 auto; }
             .sheet-input.sheet-inline.sheet-flex { width: 1%; flex: 1 1 auto; }
+            .repeatable-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: start; gap: 8px; }
+            .repeatable-control-fields { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+            .repeatable-accessory-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto; }
+            .repeatable-input-with-remove { display: flex; align-items: center; gap: 4px; min-width: 0; }
+            .repeatable-input-with-remove .sheet-input { flex: 1 1 auto; }
+            .repeatable-add-button { border: 1px dashed #94a3b8; border-radius: 6px; background: #f8fafc; padding: 6px 10px; color: #1d4ed8; font: inherit; font-size: 13px; font-weight: 600; }
+            .repeatable-add-button:disabled { cursor: not-allowed; opacity: .55; }
+            .repeatable-remove-button { display: inline-flex; width: 30px; height: 30px; flex: 0 0 30px; align-items: center; justify-content: center; padding: 0; border: 1px solid #fca5a5; border-radius: 50%; background: #fee2e2; color: #b91c1c; font: inherit; font-weight: 700; }
+            .repeatable-remove-button:hover { border-color: #f87171; background: #fecaca; }
+            .repeatable-remove-button:focus-visible { outline: 2px solid #991b1b; outline-offset: 2px; }
             .editor-mode-button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; color: #475569; font-size: 14px; font-weight: 600; }
             .editor-mode-button[aria-pressed="true"] { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
             .editor-mode-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
@@ -214,6 +240,11 @@
                 font-weight: 600;
             }
             #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section td[colspan="3"] { grid-column: span 3; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section td[colspan="2"] { grid-column: span 2; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section td[colspan="4"] { grid-column: span 4; }
+            #datasheet-editor[data-mode="edit"] .datasheet-table.editor-section td[colspan="5"] { grid-column: span 5; }
+            #datasheet-editor[data-mode="preview"] [data-repeatable-add-row],
+            #datasheet-editor[data-mode="preview"] [data-repeatable-remove] { display: none; }
             #datasheet-editor[data-mode="edit"] .datasheet-table.process-conditions-section tr {
                 grid-template-columns: minmax(150px, 1.3fr) minmax(90px, .7fr) repeat(3, minmax(95px, 1fr));
             }
@@ -303,6 +334,7 @@
             @media (max-width: 767px) {
                 .datasheet-page-container { padding: 10px; }
                 .datasheet-page { min-width: 760px; }
+                #datasheet-editor[data-mode="edit"] .repeatable-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             }
         </style>
     @endpush
@@ -432,6 +464,7 @@
 
                                 <table class="datasheet-table editor-section process-conditions-section">
                                     <colgroup><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+                                    <tbody data-repeatable-container="additional_process_conditions">
                                     <tr id="section-b" class="datasheet-title"><th colspan="5">B. PROCESS &amp; OPERATING CONDITIONS</th></tr>
                                     <tr class="datasheet-subhead"><td>Parameter</td><td>Units</td><td>Minimum</td><td>Normal</td><td>Maximum</td></tr>
                                     <tr><td class="datasheet-label">Fluid Phase &amp; State</td><td class="text-center">—</td><td colspan="3">{{ $fieldInput('process_conditions.fluid_phase_state', $process['fluid_phase_state'] ?? '') }}</td></tr>
@@ -514,10 +547,43 @@
                                         @endforeach
                                     </tr>
                                     <tr><td class="datasheet-label">Design Pressure / Temp.</td><td class="text-center">—</td><td colspan="3"><div class="inline-fields">{{ $fieldInput('process_conditions.design_pressure', $process['design_pressure'] ?? '', 'text', 'sheet-inline sheet-flex') }} @ {{ $fieldInput('process_conditions.design_temperature', $process['design_temperature'] ?? '', 'text', 'sheet-inline sheet-flex') }}</div></td></tr>
+                                    @foreach ($repeatableRows['additional_process_conditions'] as $index => $row)
+                                        <tr data-repeatable-row="additional_process_conditions" data-row-index="{{ $index }}">
+                                            <td>
+                                                <div class="repeatable-input-with-remove">
+                                                    {{ $fieldInput('additional_process_conditions.'.$index.'.parameter', $row['parameter'] ?? '') }}
+                                                    <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_process_conditions" aria-label="Remove custom process condition"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                            <td>{{ $fieldInput('additional_process_conditions.'.$index.'.units', $row['units'] ?? '') }}</td>
+                                            @foreach (['minimum', 'normal', 'maximum'] as $point)
+                                                <td>{{ $fieldInput('additional_process_conditions.'.$index.'.'.$point, $row[$point] ?? '', 'number', 'sheet-number') }}</td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                    <tr data-repeatable-add-row>
+                                        <td colspan="5"><button type="button" class="repeatable-add-button" data-repeatable-add="additional_process_conditions" data-repeatable-max="20">+ Add process parameter</button></td>
+                                    </tr>
+                                    </tbody>
                                 </table>
+                                <template id="additional_process_conditions-template">
+                                    <tr data-repeatable-row="additional_process_conditions" data-row-index="__INDEX__">
+                                        <td>
+                                            <div class="repeatable-input-with-remove">
+                                                <input type="text" name="datasheet_fields[additional_process_conditions][__INDEX__][parameter]" aria-label="Custom process parameter" placeholder="Parameter" maxlength="100" class="sheet-input">
+                                                <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_process_conditions" aria-label="Remove custom process condition"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                            </div>
+                                        </td>
+                                        <td><input type="text" name="datasheet_fields[additional_process_conditions][__INDEX__][units]" aria-label="Custom process condition units" placeholder="Units" maxlength="50" class="sheet-input"></td>
+                                        <td><input type="text" name="datasheet_fields[additional_process_conditions][__INDEX__][minimum]" aria-label="Custom process condition minimum" placeholder="Min" maxlength="100" class="sheet-input sheet-number"></td>
+                                        <td><input type="text" name="datasheet_fields[additional_process_conditions][__INDEX__][normal]" aria-label="Custom process condition normal" placeholder="Normal" maxlength="100" class="sheet-input sheet-number"></td>
+                                        <td><input type="text" name="datasheet_fields[additional_process_conditions][__INDEX__][maximum]" aria-label="Custom process condition maximum" placeholder="Max" maxlength="100" class="sheet-input sheet-number"></td>
+                                    </tr>
+                                </template>
 
                                 <table class="datasheet-table editor-section mechanical-section">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+                                    <tbody data-repeatable-container="additional_mechanical_specs">
                                     <tr id="section-c" class="datasheet-title"><th colspan="4">C. VALVE BODY &amp; MECHANICAL CONSTRUCTION</th></tr>
                                     <tr>
                                         <td class="datasheet-label">Nominal Valve Size (DN / NPS)</td>
@@ -528,10 +594,39 @@
                                     <tr><td class="datasheet-label">Pressure Class / Rating</td><td>{{ $snapshotInput('dimension.pressure_class', $dimension['pressure_class'] ?? '') }}</td><td class="datasheet-label">Flange Facing &amp; Finish</td><td>{{ $snapshotInput('model.flange_facing_finish', $model['flange_facing_finish'] ?? '') }}</td></tr>
                                     <tr><td class="datasheet-label">Design Standard (API / ASME)</td><td>{{ $snapshotInput('model.design_standard', $model['design_standard'] ?? '') }}</td><td class="datasheet-label">Bonnet / Cover Type</td><td>{{ $snapshotInput('model.bonnet_cover_type', $model['bonnet_cover_type'] ?? '') }}</td></tr>
                                     <tr><td class="datasheet-label">Face-to-Face Standard</td><td>{{ $snapshotInput('model.face_to_face_standard', $model['face_to_face_standard'] ?? '') }}</td><td class="datasheet-label">Bore / Port Configuration</td><td>{{ $snapshotInput('model.bore_port_configuration', $model['bore_port_configuration'] ?? '') }}</td></tr>
+                                    @foreach ($repeatableRows['additional_mechanical_specs'] as $index => $row)
+                                        <tr data-repeatable-row="additional_mechanical_specs" data-row-index="{{ $index }}">
+                                            <td colspan="4">
+                                                <div class="repeatable-fields">
+                                                    {{ $fieldInput('additional_mechanical_specs.'.$index.'.specification', $row['specification'] ?? '') }}
+                                                    {{ $fieldInput('additional_mechanical_specs.'.$index.'.value', $row['value'] ?? '') }}
+                                                    {{ $fieldInput('additional_mechanical_specs.'.$index.'.units', $row['units'] ?? '') }}
+                                                    <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_mechanical_specs" aria-label="Remove mechanical specification"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    <tr data-repeatable-add-row>
+                                        <td colspan="4"><button type="button" class="repeatable-add-button" data-repeatable-add="additional_mechanical_specs" data-repeatable-max="20">+ Add mechanical specification</button></td>
+                                    </tr>
+                                    </tbody>
                                 </table>
+                                <template id="additional_mechanical_specs-template">
+                                    <tr data-repeatable-row="additional_mechanical_specs" data-row-index="__INDEX__">
+                                        <td colspan="4">
+                                            <div class="repeatable-fields">
+                                                <input type="text" name="datasheet_fields[additional_mechanical_specs][__INDEX__][specification]" aria-label="Mechanical specification" placeholder="Specification" maxlength="100" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_mechanical_specs][__INDEX__][value]" aria-label="Mechanical specification value" placeholder="Value" maxlength="255" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_mechanical_specs][__INDEX__][units]" aria-label="Mechanical specification units" placeholder="Units" maxlength="50" class="sheet-input">
+                                                <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_mechanical_specs" aria-label="Remove mechanical specification"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
 
                                 <table class="datasheet-table editor-section bom-section">
                                     <colgroup><col style="width:8%"><col style="width:22%"><col style="width:70%"></colgroup>
+                                    <tbody data-repeatable-container="additional_bom_items">
                                     <tr id="section-d" class="datasheet-title"><th colspan="3">D. MATERIALS OF CONSTRUCTION (BILL OF MATERIALS)</th></tr>
                                     <tr class="datasheet-subhead"><td>S. No.</td><td>Part name</td><td>Material details</td></tr>
                                     @forelse ($bom as $index => $row)
@@ -548,7 +643,37 @@
                                     @empty
                                         <tr><td colspan="3" class="text-center">No BOM materials configured</td></tr>
                                     @endforelse
+                                    @foreach ($repeatableRows['additional_bom_items'] as $index => $row)
+                                        <tr data-repeatable-row="additional_bom_items" data-row-index="{{ $index }}">
+                                            <td class="text-center">{{ count($bom) + $loop->iteration }}</td>
+                                            <td>{{ $fieldInput('additional_bom_items.'.$index.'.part_name', $row['part_name'] ?? '') }}</td>
+                                            <td>
+                                                <div class="inline-fields">
+                                                    {{ $fieldInput('additional_bom_items.'.$index.'.material_code', $row['material_code'] ?? '', 'text', 'sheet-inline sheet-medium') }} —
+                                                    {{ $fieldInput('additional_bom_items.'.$index.'.material_details', $row['material_details'] ?? '', 'text', 'sheet-inline sheet-flex') }}
+                                                    <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_bom_items" aria-label="Remove BOM item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    <tr data-repeatable-add-row>
+                                        <td colspan="3"><button type="button" class="repeatable-add-button" data-repeatable-add="additional_bom_items" data-repeatable-max="20">+ Add BOM item</button></td>
+                                    </tr>
+                                    </tbody>
                                 </table>
+                                <template id="additional_bom_items-template">
+                                    <tr data-repeatable-row="additional_bom_items" data-row-index="__INDEX__">
+                                        <td class="text-center">+</td>
+                                        <td><input type="text" name="datasheet_fields[additional_bom_items][__INDEX__][part_name]" aria-label="Additional BOM part name" placeholder="Part name" maxlength="255" class="sheet-input"></td>
+                                        <td>
+                                            <div class="inline-fields">
+                                                <input type="text" name="datasheet_fields[additional_bom_items][__INDEX__][material_code]" aria-label="Additional BOM material code" placeholder="Material code" maxlength="100" class="sheet-input sheet-inline sheet-medium"> —
+                                                <input type="text" name="datasheet_fields[additional_bom_items][__INDEX__][material_details]" aria-label="Additional BOM material details" placeholder="Material details" maxlength="255" class="sheet-input sheet-inline sheet-flex">
+                                                <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_bom_items" aria-label="Remove BOM item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
                             </div>
                         </div>
                     </section>
@@ -558,6 +683,7 @@
                             <div class="datasheet-page text-[13px] leading-tight text-slate-800 dark:text-slate-100">
                                 <table id="control-performance-section" class="datasheet-table editor-section control-performance-section {{ $category === 'Control / Modulating' ? '' : 'hidden' }}">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+                                    <tbody data-repeatable-container="additional_control_cases">
                                     <tr id="section-e" class="datasheet-title"><th colspan="4">E. CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)</th></tr>
                                     <tr class="control-performance-edit-row">
                                         <td class="datasheet-label">Flow Characteristic</td>
@@ -632,7 +758,37 @@
                                         <td class="datasheet-label">Cavitation / Flashing Status</td>
                                         <td><span data-performance-preview="datasheet_fields[control_performance][cavitation_status]">—</span></td>
                                     </tr>
+                                    @foreach ($repeatableRows['additional_control_cases'] as $index => $row)
+                                        <tr data-repeatable-row="additional_control_cases" data-row-index="{{ $index }}">
+                                            <td colspan="4">
+                                                <div class="repeatable-fields repeatable-control-fields">
+                                                    {{ $fieldInput('additional_control_cases.'.$index.'.case_name', $row['case_name'] ?? '') }}
+                                                    {{ $fieldInput('additional_control_cases.'.$index.'.valve_travel', $row['valve_travel'] ?? '') }}
+                                                    {{ $fieldInput('additional_control_cases.'.$index.'.required_capacity', $row['required_capacity'] ?? '') }}
+                                                    {{ $fieldInput('additional_control_cases.'.$index.'.predicted_noise', $row['predicted_noise'] ?? '') }}
+                                                    <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_control_cases" aria-label="Remove control sizing case"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    <tr data-repeatable-add-row>
+                                        <td colspan="4"><button type="button" class="repeatable-add-button" data-repeatable-add="additional_control_cases" data-repeatable-max="20">+ Add sizing case</button></td>
+                                    </tr>
+                                    </tbody>
                                 </table>
+                                <template id="additional_control_cases-template">
+                                    <tr data-repeatable-row="additional_control_cases" data-row-index="__INDEX__">
+                                        <td colspan="4">
+                                            <div class="repeatable-fields repeatable-control-fields">
+                                                <input type="text" name="datasheet_fields[additional_control_cases][__INDEX__][case_name]" aria-label="Sizing case name" placeholder="Case name" maxlength="100" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_control_cases][__INDEX__][valve_travel]" aria-label="Sizing case valve travel" placeholder="Valve travel" maxlength="50" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_control_cases][__INDEX__][required_capacity]" aria-label="Sizing case required capacity" placeholder="Required capacity" maxlength="100" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_control_cases][__INDEX__][predicted_noise]" aria-label="Sizing case predicted noise" placeholder="Predicted noise" maxlength="100" class="sheet-input">
+                                                <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_control_cases" aria-label="Remove control sizing case"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
 
                                 <table class="datasheet-table editor-section actuation-section">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
@@ -650,12 +806,32 @@
                                                     </label>
                                                 @endforeach
                                             </div>
+                                                <div class="mt-3 grid gap-2" data-repeatable-container="additional_accessories">
+                                                    @foreach ($repeatableRows['additional_accessories'] as $index => $row)
+                                                        <div class="repeatable-fields repeatable-accessory-fields" data-repeatable-row="additional_accessories" data-row-index="{{ $index }}">
+                                                            {{ $fieldInput('additional_accessories.'.$index.'.accessory', $row['accessory'] ?? '') }}
+                                                            {{ $fieldInput('additional_accessories.'.$index.'.details', $row['details'] ?? '') }}
+                                                            <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_accessories" aria-label="Remove accessory"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                                        </div>
+                                                    @endforeach
+                                                    <div data-repeatable-add-row>
+                                                        <button type="button" class="repeatable-add-button" data-repeatable-add="additional_accessories" data-repeatable-max="20">+ Add accessory</button>
+                                                    </div>
+                                                </div>
                                         </td>
                                     </tr>
                                 </table>
+                                <template id="additional_accessories-template">
+                                    <div class="repeatable-fields repeatable-accessory-fields" data-repeatable-row="additional_accessories" data-row-index="__INDEX__">
+                                        <input type="text" name="datasheet_fields[additional_accessories][__INDEX__][accessory]" aria-label="Additional accessory" placeholder="Accessory" maxlength="100" class="sheet-input">
+                                        <input type="text" name="datasheet_fields[additional_accessories][__INDEX__][details]" aria-label="Additional accessory details" placeholder="Details" maxlength="255" class="sheet-input">
+                                        <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_accessories" aria-label="Remove accessory"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                    </div>
+                                </template>
 
                                 <table class="datasheet-table editor-section testing-compliance-section">
                                     <colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+                                    <tbody data-repeatable-container="additional_compliance">
                                     <tr id="section-g" class="datasheet-title"><th colspan="4">G. TESTING, INSPECTION &amp; COMPLIANCE</th></tr>
                                     <tr><td class="datasheet-label">Shell / Body Test Standard</td><td>{{ $fieldInput('testing_compliance.shell_test_standard', $shellTestStandard) }}</td><td class="datasheet-label">Seat / Closure Test Standard</td><td>{{ $fieldInput('testing_compliance.seat_test_standard', $seatTestStandard) }}</td></tr>
                                     <tr><td class="datasheet-label">Seat Leakage Class</td><td>{{ $fieldInput('testing_compliance.seat_leakage_class', $testing['seat_leakage_class'] ?? '') }}</td><td class="datasheet-label">Material Certification</td><td>{{ $fieldInput('testing_compliance.material_certification', $testing['material_certification'] ?? '') }}</td></tr>
@@ -692,11 +868,40 @@
                                             {{ $fieldInput('testing_compliance.other_compliance', $testing['other_compliance'] ?? '') }}
                                         </td>
                                     </tr>
+                                    @foreach ($repeatableRows['additional_compliance'] as $index => $row)
+                                        <tr data-repeatable-row="additional_compliance" data-row-index="{{ $index }}">
+                                            <td colspan="4">
+                                                <div class="repeatable-fields">
+                                                    {{ $fieldInput('additional_compliance.'.$index.'.item', $row['item'] ?? '') }}
+                                                    {{ $fieldInput('additional_compliance.'.$index.'.standard', $row['standard'] ?? '') }}
+                                                    {{ $fieldInput('additional_compliance.'.$index.'.status_notes', $row['status_notes'] ?? '') }}
+                                                    <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_compliance" aria-label="Remove testing or compliance item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    <tr data-repeatable-add-row>
+                                        <td colspan="4"><button type="button" class="repeatable-add-button" data-repeatable-add="additional_compliance" data-repeatable-max="20">+ Add testing / compliance item</button></td>
+                                    </tr>
                                     <tr><td class="datasheet-label">Notes / Vendor Remarks</td><td colspan="3"><textarea name="notes" aria-label="Notes / vendor remarks" placeholder="Notes / Vendor Remarks" rows="2" maxlength="5000" class="sheet-input">{{ old('notes', $snapshot['notes'] ?? '') }}</textarea></td></tr>
+                                    </tbody>
                                 </table>
+                                <template id="additional_compliance-template">
+                                    <tr data-repeatable-row="additional_compliance" data-row-index="__INDEX__">
+                                        <td colspan="4">
+                                            <div class="repeatable-fields">
+                                                <input type="text" name="datasheet_fields[additional_compliance][__INDEX__][item]" aria-label="Testing or compliance item" placeholder="Test / compliance item" maxlength="100" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_compliance][__INDEX__][standard]" aria-label="Testing or compliance standard" placeholder="Standard" maxlength="100" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_compliance][__INDEX__][status_notes]" aria-label="Testing or compliance status or notes" placeholder="Status / notes" maxlength="255" class="sheet-input">
+                                                <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_compliance" aria-label="Remove testing or compliance item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
 
                                 <table class="datasheet-table editor-section quality-planning-section">
                                     <colgroup><col style="width:34%"><col style="width:66%"></colgroup>
+                                    <tbody data-repeatable-container="additional_quality_planning">
                                     <tr id="section-h" class="datasheet-title"><th colspan="2">H. QUALITY &amp; PROJECT PLANNING</th></tr>
                                     <tr>
                                         <td class="datasheet-label">Inspection &amp; Test Plan (ITP)</td>
@@ -723,7 +928,35 @@
                                     <tr><td class="datasheet-label">Required On-site Date</td><td>{{ $fieldInput('quality_planning.required_on_site_date', $qualityPlanning['required_on_site_date'] ?? '', 'date') }}</td></tr>
                                     <tr><td class="datasheet-label">Vendor Document Submission Due Date</td><td>{{ $fieldInput('quality_planning.vendor_document_submission_due_date', $qualityPlanning['vendor_document_submission_due_date'] ?? '', 'date') }}</td></tr>
                                     <tr><td class="datasheet-label">Inspection / FAT Target Date</td><td>{{ $fieldInput('quality_planning.inspection_fat_target_date', $qualityPlanning['inspection_fat_target_date'] ?? '', 'date') }}</td></tr>
+                                    @foreach ($repeatableRows['additional_quality_planning'] as $index => $row)
+                                        <tr data-repeatable-row="additional_quality_planning" data-row-index="{{ $index }}">
+                                            <td colspan="2">
+                                                <div class="repeatable-fields">
+                                                    {{ $fieldInput('additional_quality_planning.'.$index.'.item', $row['item'] ?? '') }}
+                                                    {{ $fieldInput('additional_quality_planning.'.$index.'.requirement_notes', $row['requirement_notes'] ?? '') }}
+                                                    {{ $fieldInput('additional_quality_planning.'.$index.'.due_date', $row['due_date'] ?? '', 'date') }}
+                                                    <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_quality_planning" aria-label="Remove quality planning item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    <tr data-repeatable-add-row>
+                                        <td colspan="2"><button type="button" class="repeatable-add-button" data-repeatable-add="additional_quality_planning" data-repeatable-max="20">+ Add quality planning item</button></td>
+                                    </tr>
+                                    </tbody>
                                 </table>
+                                <template id="additional_quality_planning-template">
+                                    <tr data-repeatable-row="additional_quality_planning" data-row-index="__INDEX__">
+                                        <td colspan="2">
+                                            <div class="repeatable-fields">
+                                                <input type="text" name="datasheet_fields[additional_quality_planning][__INDEX__][item]" aria-label="Quality planning item" placeholder="Planning item" maxlength="100" class="sheet-input">
+                                                <input type="text" name="datasheet_fields[additional_quality_planning][__INDEX__][requirement_notes]" aria-label="Quality planning requirement or notes" placeholder="Requirement / notes" maxlength="255" class="sheet-input">
+                                                <input type="date" name="datasheet_fields[additional_quality_planning][__INDEX__][due_date]" aria-label="Quality planning due date" class="sheet-input">
+                                                <button type="button" class="repeatable-remove-button" data-repeatable-remove="additional_quality_planning" aria-label="Remove quality planning item"><i data-lucide="minus" class="h-4 w-4" aria-hidden="true"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
 
                                 <table class="datasheet-table editor-section revision-section">
                                     <colgroup><col style="width:10%"><col style="width:18%"><col style="width:24%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup>
@@ -807,6 +1040,75 @@
             const editorModeStatus = document.getElementById('editor-mode-status');
             const conditionPreviewFields = editorForm.querySelectorAll('[data-condition-preview]');
             const controlPerformancePreviewFields = editorForm.querySelectorAll('[data-performance-preview]');
+            const repeatableGroupUpdates = new Map();
+
+            editorForm.querySelectorAll('[data-repeatable-add]').forEach((addButton) => {
+                const group = addButton.dataset.repeatableAdd;
+                const container = editorForm.querySelector(`[data-repeatable-container="${group}"]`);
+                const template = document.getElementById(`${group}-template`);
+                const addRow = container?.querySelector('[data-repeatable-add-row]');
+                const templateRow = template?.content.firstElementChild;
+                const maxRows = Number(addButton.dataset.repeatableMax);
+
+                if (!container || !templateRow || !addRow || !Number.isInteger(maxRows) || maxRows < 1) {
+                    throw new Error(`Repeatable row group "${group}" is not configured correctly.`);
+                }
+
+                let nextIndex = 0;
+                const getRows = () => container.querySelectorAll(`[data-repeatable-row="${group}"]`);
+                getRows().forEach((row) => {
+                    const rowIndex = Number(row.dataset.rowIndex);
+                    if (Number.isInteger(rowIndex) && rowIndex >= nextIndex) {
+                        nextIndex = rowIndex + 1;
+                    }
+                });
+
+                const updateAddButton = () => {
+                    addButton.disabled = getRows().length >= maxRows;
+                    addButton.setAttribute('aria-disabled', String(addButton.disabled));
+                };
+                repeatableGroupUpdates.set(group, updateAddButton);
+
+                addButton.addEventListener('click', () => {
+                    if (addButton.disabled) {
+                        return;
+                    }
+
+                    const row = templateRow.cloneNode(true);
+                    row.dataset.rowIndex = String(nextIndex);
+                    row.querySelectorAll('[name]').forEach((field) => {
+                        field.name = field.name.replace('__INDEX__', String(nextIndex));
+                    });
+                    nextIndex += 1;
+                    container.insertBefore(row, addRow);
+                    updateAddButton();
+                    row.querySelector('input, select, textarea')?.focus();
+                });
+
+                updateAddButton();
+            });
+
+            editorForm.addEventListener('click', (event) => {
+                if (!(event.target instanceof Element)) {
+                    return;
+                }
+
+                const removeButton = event.target.closest('[data-repeatable-remove]');
+                if (!removeButton) {
+                    return;
+                }
+
+                const group = removeButton.dataset.repeatableRemove;
+                const row = removeButton.closest('[data-repeatable-row]');
+                const updateAddButton = repeatableGroupUpdates.get(group);
+
+                if (!row || !updateAddButton) {
+                    throw new Error(`Repeatable row group "${group}" is not configured correctly.`);
+                }
+
+                row.remove();
+                updateAddButton();
+            });
 
             function updateConditionPreview() {
                 conditionPreviewFields.forEach((previewField) => {

@@ -124,10 +124,14 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
 - Quality and project-planning requirements (ITP/TPI status, witness/hold points,
   required quality documents, and target dates) are validated and saved in each
   datasheet snapshot rather than reusable model or dimension records.
-- The PDF follows the two-page industrial datasheet template with identification,
-  operating conditions, mechanical construction, BOM, control performance,
-  actuation, testing/compliance, quality/project planning, and revision sign-off
-  sections.
+- Added datasheet-only repeatable rows to Sections B–H. Their fields are allowlisted
+  and validated, saved in the immutable snapshot, and never written to reusable valve
+  models; each section is capped at 20 added rows. Additional control cases are only
+  accepted for Control / Modulating models.
+- The PDF follows the industrial datasheet template with identification, operating
+  conditions, mechanical construction, BOM, control performance, actuation,
+  testing/compliance, quality/project planning, and revision sign-off sections.
+  Added rows can flow onto further pages, with dynamic page numbering.
 - Cross-model dimensions and forged/inactive/ineligible BOM material selections are
   rejected server-side.
 - Revisions clone the source snapshot, allocate monotonic revision numbers, and link
@@ -138,8 +142,12 @@ The Phase 5 datasheet implementation is complete for the current MVP surface:
   transactions/locks for the configured boundaries.
 
 Focused configurator and PDF suites pass for dynamic quota boundaries, snapshot
-immutability, cross-model validation, revision linkage, quality-planning
-validation/persistence, and editor/PDF rendering.
+immutability, cross-model validation, revision linkage, quality-planning and
+repeatable-row validation/persistence, and editor/PDF rendering (15 tests, 321
+assertions). Browser interaction checks also confirmed add/remove behavior and
+unique indexes across Sections B–H, and that reaching 20 rows disables Add until a
+row is removed. A manual PDF render with the maximum rows produced five pages with
+dynamic page numbering.
 
 ### QA checklist
 
@@ -159,6 +167,14 @@ validation/persistence, and editor/PDF rendering.
 - Enter values for ITP, TPI, witness/hold points, required quality documents, and
   planning dates; confirm invalid statuses/dates are rejected, valid values are
   frozen in the datasheet snapshot, and each parameter renders on its own PDF row.
+- Add and remove rows in each Section B–H group; confirm remaining field names stay
+  unique after deletion, the 20-row limit disables Add, and removing a row enables it
+  again. Confirm the server rejects excess rows and unrecognized fields.
+- Submit added rows in Sections B–H and confirm they persist in the datasheet snapshot
+  without changing the reusable valve model. Confirm extra control cases are rejected
+  for non-modulating models.
+- Add enough rows to exceed the original two-page layout; confirm all rows render
+  without clipping or splitting and the PDF footer shows the correct page/total.
 - Confirm control-performance inputs and PDF section are only shown for
   Control / Modulating models; leave non-applicable fields blank.
 - Submit a forged dimension or material from another model/tenant and confirm
@@ -173,5 +189,5 @@ validation/persistence, and editor/PDF rendering.
 - Run focused coverage with:
 
 ```sh
-php artisan test --compact tests/Feature/TenantConfiguratorTest.php tests/Feature/TenantManagementTest.php
+php artisan test --compact tests/Feature/TenantConfiguratorTest.php tests/Feature/TenantPdfTest.php tests/Feature/TenantManagementTest.php
 ```

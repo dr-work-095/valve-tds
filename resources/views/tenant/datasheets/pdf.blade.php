@@ -4,6 +4,22 @@
     $dimension = $snapshot['dimension'] ?? [];
     $bom = $snapshot['bom'] ?? [];
     $fields = $snapshot['datasheet_fields'] ?? [];
+    $repeatableFieldNames = [
+        'additional_process_conditions',
+        'additional_mechanical_specs',
+        'additional_bom_items',
+        'additional_control_cases',
+        'additional_accessories',
+        'additional_compliance',
+        'additional_quality_planning',
+    ];
+    $repeatableRows = [];
+    foreach ($repeatableFieldNames as $repeatableFieldName) {
+        $rows = $fields[$repeatableFieldName] ?? [];
+        $repeatableRows[$repeatableFieldName] = is_array($rows)
+            ? array_filter($rows, 'is_array')
+            : [];
+    }
     $identification = $fields['identification'] ?? [];
     $process = $fields['process_conditions'] ?? [];
     $mechanical = $fields['mechanical'] ?? [];
@@ -101,12 +117,10 @@
         .right { text-align: right; }
         .small { font-size: 6.9pt; }
         .subhead td { background: #f0f2f5; text-align: center; font-weight: bold; }
+        table.data tr { page-break-inside: avoid; break-inside: avoid; }
         .checks { line-height: 1.55; }
         .revision { margin-top: 1px !important; }
         .revision th { background: #f0f2f5; text-align: center; font-weight: bold; }
-        .footer { position: fixed; bottom: -11mm; left: 0; right: 0; height: 7mm; color: #778397; font-size: 6.8pt; }
-        .footer .left { float: left; }
-        .footer .right { float: right; }
         .muted { color: #5b6574; }
     </style>
 </head>
@@ -168,6 +182,15 @@
         <tr><td class="label">Viscosity</td><td class="center">{{ $metricUnit('viscosity', 'cP') }}</td><td class="center">{{ $metricValue('viscosity', 'minimum') }}</td><td class="center">{{ $metricValue('viscosity', 'normal') }}</td><td class="center">{{ $metricValue('viscosity', 'maximum') }}</td></tr>
         <tr><td class="label">Vapor Pressure (P<sub>v</sub>)</td><td class="center">{{ $metricUnit('vapor_pressure', 'bar(a)') }}</td><td class="center">{{ $metricValue('vapor_pressure', 'minimum') }}</td><td class="center">{{ $metricValue('vapor_pressure', 'normal') }}</td><td class="center">{{ $metricValue('vapor_pressure', 'maximum') }}</td></tr>
         <tr><td class="label">Design Pressure /<br>Design Temp.</td><td class="center">—</td><td colspan="3">{{ $valueOrDash($process['design_pressure'] ?? null) }} @if (filled($process['design_temperature'] ?? null)) @ {{ $process['design_temperature'] }} @endif</td></tr>
+        @foreach ($repeatableRows['additional_process_conditions'] as $row)
+            <tr>
+                <td class="label">{{ $valueOrDash($row['parameter'] ?? null) }}</td>
+                <td class="center">{{ $valueOrDash($row['units'] ?? null) }}</td>
+                <td class="center">{{ $valueOrDash($row['minimum'] ?? null) }}</td>
+                <td class="center">{{ $valueOrDash($row['normal'] ?? null) }}</td>
+                <td class="center">{{ $valueOrDash($row['maximum'] ?? null) }}</td>
+            </tr>
+        @endforeach
     </table>
 
     <table class="data">
@@ -177,6 +200,14 @@
         <tr><td class="label">Pressure Class / Rating</td><td>{{ $valueOrDash($dimension['pressure_class'] ?? null) }}</td><td class="label">Flange Facing &amp; Finish</td><td>{{ $valueOrDash(filled($model['flange_facing_finish'] ?? null) ? $model['flange_facing_finish'] : ($mechanical['flange_facing_finish'] ?? null)) }}</td></tr>
         <tr><td class="label">Design Standard (API / ASME)</td><td>{{ $valueOrDash($model['design_standard'] ?? null) }}</td><td class="label">Bonnet / Cover Type</td><td>{{ $valueOrDash(filled($model['bonnet_cover_type'] ?? null) ? $model['bonnet_cover_type'] : ($mechanical['bonnet_cover_type'] ?? null)) }}</td></tr>
         <tr><td class="label">Face-to-Face Standard</td><td>{{ $valueOrDash($model['face_to_face_standard'] ?? null) }}</td><td class="label">Bore / Port Configuration</td><td>{{ $valueOrDash(filled($model['bore_port_configuration'] ?? null) ? $model['bore_port_configuration'] : ($mechanical['bore_port_configuration'] ?? null)) }}</td></tr>
+        @foreach ($repeatableRows['additional_mechanical_specs'] as $row)
+            <tr>
+                <td class="label">{{ $valueOrDash($row['specification'] ?? null) }}</td>
+                <td>{{ $valueOrDash($row['value'] ?? null) }}</td>
+                <td class="label">Units</td>
+                <td>{{ $valueOrDash($row['units'] ?? null) }}</td>
+            </tr>
+        @endforeach
     </table>
 
     <table class="data">
@@ -192,8 +223,14 @@
         @empty
             <tr><td colspan="3" class="center">No BOM materials configured</td></tr>
         @endforelse
+        @foreach ($repeatableRows['additional_bom_items'] as $row)
+            <tr>
+                <td class="center">{{ count($bom) + $loop->iteration }}</td>
+                <td class="label">{{ $valueOrDash($row['part_name'] ?? null) }}</td>
+                <td>{{ $valueOrDash($row['material_code'] ?? null) }} — {{ $valueOrDash($row['material_details'] ?? null) }}</td>
+            </tr>
+        @endforeach
     </table>
-    <div class="footer"><span class="left">Industrial Valve Engineering Datasheet — Standard Specification Template</span><span class="right">Page 1 of 2</span></div>
 </div>
 
 <div class="page">
@@ -205,6 +242,20 @@
             <tr><td class="label">Required C<sub>v</sub> / K<sub>v</sub><br>(Min/Norm/Max)</td><td>{{ $valueOrDash(data_get($performance, 'required_capacity.minimum')) }} / {{ $valueOrDash(data_get($performance, 'required_capacity.normal')) }} / {{ $valueOrDash(data_get($performance, 'required_capacity.maximum')) }} ({{ $valueOrDash(data_get($performance, 'required_capacity.units')) }})</td><td class="label">Predicted Noise (dBA)</td><td>{{ $valueOrDash($performance['predicted_noise'] ?? null) }}</td></tr>
             <tr><td class="label">Selected Rated C<sub>v</sub> / K<sub>v</sub></td><td>{{ $valueOrDash($performance['selected_rated_cv'] ?? null) }} C<sub>v</sub> ({{ $valueOrDash($performance['selected_rated_kv'] ?? null) }} K<sub>v</sub>)</td><td class="label">Cavitation / Flashing Status</td><td>{{ $valueOrDash($performance['cavitation_status'] ?? null) }}</td></tr>
         </table>
+        @if ($repeatableRows['additional_control_cases'] !== [])
+            <table class="data">
+                <tr class="section-title"><th colspan="4">ADDITIONAL CONTROL SIZING CASES</th></tr>
+                <tr class="subhead"><td>Case Name</td><td>Valve Travel</td><td>Required Capacity</td><td>Predicted Noise</td></tr>
+                @foreach ($repeatableRows['additional_control_cases'] as $row)
+                    <tr>
+                        <td>{{ $valueOrDash($row['case_name'] ?? null) }}</td>
+                        <td>{{ $valueOrDash($row['valve_travel'] ?? null) }}</td>
+                        <td>{{ $valueOrDash($row['required_capacity'] ?? null) }}</td>
+                        <td>{{ $valueOrDash($row['predicted_noise'] ?? null) }}</td>
+                    </tr>
+                @endforeach
+            </table>
+        @endif
     @endif
 
     <table class="data">
@@ -218,6 +269,9 @@
                     {{ in_array($accessory, $accessories, true) ? '■' : '□' }} {{ $accessory }}@if (! $loop->last)&nbsp;&nbsp;@endif
                 @endforeach
                 @if (! $loop->last)<br>@endif
+            @endforeach
+            @foreach ($repeatableRows['additional_accessories'] as $accessory)
+                <br>{{ $valueOrDash($accessory['accessory'] ?? null) }} — {{ $valueOrDash($accessory['details'] ?? null) }}
             @endforeach
         </td></tr>
     </table>
@@ -237,6 +291,18 @@
         <tr><td class="label">Other Compliance</td><td>{{ $valueOrDash($testing['other_compliance'] ?? null) }}</td></tr>
         <tr><td class="label">Notes / Vendor Remarks</td><td>{{ $valueOrDash($snapshot['notes'] ?? null) }}</td></tr>
     </table>
+    @if ($repeatableRows['additional_compliance'] !== [])
+        <table class="data">
+            <tr class="subhead"><td>Test / Compliance Item</td><td>Standard</td><td>Status / Notes</td></tr>
+            @foreach ($repeatableRows['additional_compliance'] as $row)
+                <tr>
+                    <td class="label">{{ $valueOrDash($row['item'] ?? null) }}</td>
+                    <td>{{ $valueOrDash($row['standard'] ?? null) }}</td>
+                    <td>{{ $valueOrDash($row['status_notes'] ?? null) }}</td>
+                </tr>
+            @endforeach
+        </table>
+    @endif
 
     <table class="data">
         <colgroup><col style="width:42%"><col style="width:58%"></colgroup>
@@ -249,6 +315,18 @@
         <tr><td class="label">Vendor Document Submission Due Date</td><td>{{ $valueOrDash($qualityPlanning['vendor_document_submission_due_date'] ?? null) }}</td></tr>
         <tr><td class="label">Inspection / FAT Target Date</td><td>{{ $valueOrDash($qualityPlanning['inspection_fat_target_date'] ?? null) }}</td></tr>
     </table>
+    @if ($repeatableRows['additional_quality_planning'] !== [])
+        <table class="data">
+            <tr class="subhead"><td>Planning Item</td><td>Requirement / Notes</td><td>Due Date</td></tr>
+            @foreach ($repeatableRows['additional_quality_planning'] as $row)
+                <tr>
+                    <td class="label">{{ $valueOrDash($row['item'] ?? null) }}</td>
+                    <td>{{ $valueOrDash($row['requirement_notes'] ?? null) }}</td>
+                    <td>{{ $valueOrDash($row['due_date'] ?? null) }}</td>
+                </tr>
+            @endforeach
+        </table>
+    @endif
 
     <table class="data revision">
         <colgroup><col style="width:10%"><col style="width:18%"><col style="width:24%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup>
@@ -262,7 +340,6 @@
             <td class="center">{{ $valueOrDash($revision['approved_by'] ?? null) }}</td>
         </tr>
     </table>
-    <div class="footer"><span class="left">Industrial Valve Engineering Datasheet — Standard Specification Template</span><span class="right">Page 2 of 2</span></div>
 </div>
 </body>
 </html>

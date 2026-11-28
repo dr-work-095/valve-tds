@@ -1,6 +1,6 @@
-import { createIcons, Plus } from 'lucide';
+import { createIcons, Minus, Plus } from 'lucide';
 
-createIcons({ icons: { Plus } });
+createIcons({ icons: { Minus, Plus }, inTemplates: true });
 
 const sidebar = document.getElementById('sidebar');
 const mobileBackdrop = document.getElementById('mobileBackdrop');

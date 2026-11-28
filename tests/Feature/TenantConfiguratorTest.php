@@ -213,9 +213,26 @@ class TenantConfiguratorTest extends TestCase
                     'design_pressure' => '50 bar(g)',
                     'design_temperature' => '180 C',
                 ],
+                'additional_process_conditions' => [[
+                    'parameter' => 'Differential Pressure',
+                    'units' => 'bar',
+                    'minimum' => '5-10',
+                    'normal' => '12',
+                    'maximum' => '25',
+                ]],
                 'mechanical' => [
                     'line_size' => 'DN100 (4 inch)',
                 ],
+                'additional_mechanical_specs' => [[
+                    'specification' => 'Coating',
+                    'value' => 'Epoxy',
+                    'units' => '250 microns DFT',
+                ]],
+                'additional_bom_items' => [[
+                    'part_name' => 'Instrument Manifold',
+                    'material_code' => 'SS316',
+                    'material_details' => 'Stainless steel 316',
+                ]],
                 'control_performance' => [
                     'valve_travel' => ['minimum' => 28, 'normal' => 62, 'maximum' => 79],
                     'required_capacity' => [
@@ -229,6 +246,12 @@ class TenantConfiguratorTest extends TestCase
                     'selected_rated_kv' => 70.9,
                     'cavitation_status' => 'Incipient cavitation mitigated',
                 ],
+                'additional_control_cases' => [[
+                    'case_name' => 'Startup',
+                    'valve_travel' => '22%',
+                    'required_capacity' => 'Cv 42',
+                    'predicted_noise' => '73 dBA',
+                ]],
                 'actuation' => [
                     'actuator_type' => 'Pneumatic spring-diaphragm',
                     'supply_rating' => '4.5 bar(g) instrument air',
@@ -236,6 +259,10 @@ class TenantConfiguratorTest extends TestCase
                     'stroking_time' => '6 sec open / 5 sec close',
                     'mounted_accessories' => [DatasheetAccessory::SmartPositioner->value],
                 ],
+                'additional_accessories' => [[
+                    'accessory' => 'Air filter regulator',
+                    'details' => '1/2 in NPT <img src=x onerror=probe()>',
+                ]],
                 'testing_compliance' => [
                     'shell_test_standard' => 'ASME B16.34',
                     'seat_test_standard' => 'ANSI FCI 70-2',
@@ -246,6 +273,16 @@ class TenantConfiguratorTest extends TestCase
                     'special_compliance' => [DatasheetCompliance::Iso15848->value],
                     'other_compliance' => '',
                 ],
+                'additional_compliance' => [[
+                    'item' => 'Witness test',
+                    'standard' => 'API 598',
+                    'status_notes' => 'Purchaser witness',
+                ]],
+                'additional_quality_planning' => [[
+                    'item' => 'FAT',
+                    'requirement_notes' => 'Witness hydrotest',
+                    'due_date' => '2026-12-10',
+                ]],
                 'revision' => [
                     'date' => '2026-11-27',
                     'description' => 'Issued for Design / Inquiry',
@@ -270,6 +307,14 @@ class TenantConfiguratorTest extends TestCase
         $this->assertSame('ANSI Class V', $snapshot['model']['seat_leakage_class']);
         $this->assertSame('FCV-204', $snapshot['datasheet_fields']['identification']['equipment_tag']);
         $this->assertSame(85, $snapshot['datasheet_fields']['process_conditions']['flow_rate']['normal']);
+        $this->assertSame('Differential Pressure', $snapshot['datasheet_fields']['additional_process_conditions'][0]['parameter']);
+        $this->assertSame('Coating', $snapshot['datasheet_fields']['additional_mechanical_specs'][0]['specification']);
+        $this->assertSame('Instrument Manifold', $snapshot['datasheet_fields']['additional_bom_items'][0]['part_name']);
+        $this->assertSame('Startup', $snapshot['datasheet_fields']['additional_control_cases'][0]['case_name']);
+        $this->assertSame('Air filter regulator', $snapshot['datasheet_fields']['additional_accessories'][0]['accessory']);
+        $this->assertSame('Witness test', $snapshot['datasheet_fields']['additional_compliance'][0]['item']);
+        $this->assertSame('FAT', $snapshot['datasheet_fields']['additional_quality_planning'][0]['item']);
+        $this->assertSame('Gate Ready', $model->fresh()->name);
         $this->assertSame('Body / Bonnet', $snapshot['bom'][0]['component_group']);
         $this->assertSame('1.000', $snapshot['bom'][0]['quantity_per_valve']);
         $this->assertSame('ea', $snapshot['bom'][0]['unit']);
@@ -296,6 +341,7 @@ class TenantConfiguratorTest extends TestCase
         $this->assertStringContainsString('Gate / Gate Ready', $pdfHtml);
         $this->assertStringContainsString('PROCESS &amp; OPERATING CONDITIONS', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">Density</td><td class="center">kg/m3</td><td class="center">950</td><td class="center">930</td><td class="center">910</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('<td class="label">Differential Pressure</td>', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">Specific Gravity</td><td class="center">—</td><td class="center">0.95</td><td class="center">0.93</td><td class="center">0.91</td></tr>', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">Molecular Weight</td><td class="center">g/mol</td><td class="center">18</td><td class="center">18</td><td class="center">18</td></tr>', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">Viscosity</td><td class="center">cP</td><td class="center">0.3</td><td class="center">0.2</td><td class="center">0.1</td></tr>', $pdfHtml);
@@ -305,6 +351,8 @@ class TenantConfiguratorTest extends TestCase
         $this->assertStringContainsString('Shut-off: 45', $pdfHtml);
         $this->assertStringContainsString('Equal Percentage', $pdfHtml);
         $this->assertStringContainsString('Bolted bonnet', $pdfHtml);
+        $this->assertStringContainsString('Coating', $pdfHtml);
+        $this->assertStringContainsString('250 microns DFT', $pdfHtml);
         $this->assertStringContainsString('Shell / Body Test Standard', $pdfHtml);
         $this->assertStringContainsString('Seat / Closure Test Standard', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">Fire-safe Test Standard</td><td>Customer fire-test specification FS-12</td></tr>', $pdfHtml);
@@ -312,9 +360,12 @@ class TenantConfiguratorTest extends TestCase
         $this->assertStringContainsString('ASME B16.34', $pdfHtml);
         $this->assertStringContainsString('ANSI FCI 70-2', $pdfHtml);
         $this->assertStringContainsString('CONTROL VALVE SIZING &amp; PERFORMANCE (COMPLETE FOR MODULATING SERVICE)', $pdfHtml);
+        $this->assertStringContainsString('ADDITIONAL CONTROL SIZING CASES', $pdfHtml);
+        $this->assertStringContainsString('Startup', $pdfHtml);
         $this->assertStringContainsString('S. No.', $pdfHtml);
         $this->assertStringContainsString('Part name', $pdfHtml);
         $this->assertStringContainsString('Material details', $pdfHtml);
+        $this->assertStringContainsString('Instrument Manifold', $pdfHtml);
         $this->assertStringNotContainsString('Qty / Unit', $pdfHtml);
         $this->assertStringContainsString('<td class="center">1</td>', $pdfHtml);
         $this->assertStringContainsString('<td class="label">Body</td>', $pdfHtml);
@@ -323,15 +374,21 @@ class TenantConfiguratorTest extends TestCase
         $this->assertStringNotContainsString('alert(1)', $pdfHtml);
         $this->assertStringNotContainsString('<script>alert(1)</script>', $pdfHtml);
         $this->assertStringContainsString('Smart Positioner (4-20 mA HART)', $pdfHtml);
+        $this->assertStringContainsString('Air filter regulator', $pdfHtml);
+        $this->assertStringContainsString('1/2 in NPT &lt;img src=x onerror=probe()&gt;', $pdfHtml);
+        $this->assertStringNotContainsString('<img src=x onerror=probe()>', $pdfHtml);
         $this->assertStringContainsString('□ Limit Switches', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">NACE MR0175 (Sour Service)</td><td>NIL</td></tr>', $pdfHtml);
         $this->assertStringNotContainsString('API 607 (Fire Safe)</td><td>NIL', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">ISO 15848-1 (Fugitive Emissions)</td><td>Applicable</td></tr>', $pdfHtml);
         $this->assertStringContainsString('<tr><td class="label">SIL Certified</td><td>NIL</td></tr>', $pdfHtml);
+        $this->assertStringContainsString('Purchaser witness', $pdfHtml);
+        $this->assertStringContainsString('Witness hydrotest', $pdfHtml);
+        $this->assertStringContainsString('2026-12-10', $pdfHtml);
         $this->assertStringNotContainsString('□ NACE MR0175', $pdfHtml);
         $this->assertStringContainsString('<td class="center">3</td>', $pdfHtml);
-        $this->assertStringContainsString('Page 1 of 2', $pdfHtml);
-        $this->assertStringContainsString('Page 2 of 2', $pdfHtml);
+        $this->assertStringNotContainsString('Page 1 of 2', $pdfHtml);
+        $this->assertStringNotContainsString('Page 2 of 2', $pdfHtml);
         $this->assertStringNotContainsString('Selected Dimension Measurements', $pdfHtml);
         $this->assertStringContainsString('R. Patel', $pdfHtml);
 
@@ -433,6 +490,66 @@ class TenantConfiguratorTest extends TestCase
         tenancy()->end();
     }
 
+    public function test_custom_datasheet_rows_are_capped_at_twenty_per_section(): void
+    {
+        [$tenant, $sales] = $this->createTenantUser('sales');
+        $this->prepareTenantDatabase($tenant);
+        [$model, $dimension, $bom] = $this->createReadyModel($tenant);
+        Queue::fake();
+
+        $rows = [];
+        for ($index = 0; $index < 21; $index++) {
+            $rows[] = ['parameter' => 'Custom parameter '.$index];
+        }
+
+        $this->actingAs($sales, 'web')->post(route('tenant.datasheets.store'), [
+            'client_name' => 'Too Many Custom Rows',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+            'bom_materials' => [[
+                'bom_template_id' => $bom->id,
+                'material_id' => $bom->standard_material_id,
+            ]],
+            'datasheet_fields' => [
+                'additional_process_conditions' => $rows,
+            ],
+        ])->assertSessionHasErrors('datasheet_fields.additional_process_conditions');
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, GeneratedDatasheet::count());
+        $this->assertSame(0, Queue::pushed(GenerateDatasheetPdfJob::class)->count());
+        tenancy()->end();
+    }
+
+    public function test_custom_datasheet_rows_reject_unrecognized_fields(): void
+    {
+        [$tenant, $sales] = $this->createTenantUser('sales');
+        $this->prepareTenantDatabase($tenant);
+        [$model, $dimension, $bom] = $this->createReadyModel($tenant);
+        Queue::fake();
+
+        $this->actingAs($sales, 'web')->post(route('tenant.datasheets.store'), [
+            'client_name' => 'Unexpected Custom Row Field',
+            'valve_model_id' => $model->id,
+            'dimension_id' => $dimension->id,
+            'bom_materials' => [[
+                'bom_template_id' => $bom->id,
+                'material_id' => $bom->standard_material_id,
+            ]],
+            'datasheet_fields' => [
+                'additional_process_conditions' => [[
+                    'parameter' => 'Differential pressure',
+                    'unexpected' => 'must not be persisted',
+                ]],
+            ],
+        ])->assertSessionHasErrors('datasheet_fields.additional_process_conditions.0');
+
+        tenancy()->initialize($tenant);
+        $this->assertSame(0, GeneratedDatasheet::count());
+        $this->assertSame(0, Queue::pushed(GenerateDatasheetPdfJob::class)->count());
+        tenancy()->end();
+    }
+
     public function test_datasheet_rejects_invalid_process_and_planning_values_and_unknown_accessories(): void
     {
         [$tenant, $sales] = $this->createTenantUser('sales');
@@ -452,6 +569,7 @@ class TenantConfiguratorTest extends TestCase
                     'flow_rate' => ['minimum' => 'not-a-number'],
                 ],
                 'control_performance' => ['predicted_noise' => '76 dBA'],
+                'additional_control_cases' => [['case_name' => 'Startup']],
                 'actuation' => [
                     'mounted_accessories' => ['Unknown accessory'],
                 ],
@@ -466,6 +584,7 @@ class TenantConfiguratorTest extends TestCase
         ])->assertSessionHasErrors([
             'datasheet_fields.process_conditions.flow_rate.minimum',
             'datasheet_fields.control_performance',
+            'datasheet_fields.additional_control_cases',
             'datasheet_fields.actuation.mounted_accessories.0',
             'datasheet_fields.quality_planning.itp_required',
             'datasheet_fields.quality_planning.required_on_site_date',
@@ -551,6 +670,15 @@ class TenantConfiguratorTest extends TestCase
             ->assertSee('class="datasheet-table editor-section process-conditions-section"', false)
             ->assertSee('class="datasheet-table editor-section bom-section"', false)
             ->assertSee('class="datasheet-table editor-section quality-planning-section"', false)
+            ->assertSee('data-repeatable-add="additional_process_conditions"', false)
+            ->assertSee('data-repeatable-add="additional_mechanical_specs"', false)
+            ->assertSee('data-repeatable-add="additional_bom_items"', false)
+            ->assertSee('data-repeatable-add="additional_control_cases"', false)
+            ->assertSee('data-repeatable-add="additional_accessories"', false)
+            ->assertSee('data-repeatable-add="additional_compliance"', false)
+            ->assertSee('data-repeatable-add="additional_quality_planning"', false)
+            ->assertSee('name="datasheet_fields[additional_process_conditions][__INDEX__][parameter]"', false)
+            ->assertSee('name="datasheet_fields[additional_bom_items][__INDEX__][material_details]"', false)
             ->assertSee('type="date" name="datasheet_fields[quality_planning][required_on_site_date]"', false)
             ->assertSee('>Valve Type</td>', false)
             ->assertSee('>Valve Model / Pattern</td>', false)

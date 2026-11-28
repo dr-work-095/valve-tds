@@ -59,6 +59,14 @@ class GenerateDatasheetPdfJob implements ShouldQueue
             Browsershot::html($html)
                 ->setChromePath(env('CHROME_PATH', 'C:\Program Files\Google\Chrome\Application\chrome.exe'))
                 ->showBackground()
+                ->showBrowserHeaderAndFooter()
+                ->hideHeader()
+                ->footerHtml(
+                    '<div style="width: 100%; margin: 0 13mm; color: #778397; font-family: Arial, Helvetica, sans-serif; font-size: 7px;">'
+                    .'<span style="float: left;">Industrial Valve Engineering Datasheet - Standard Specification Template</span>'
+                    .'<span style="float: right;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>'
+                    .'</div>',
+                )
                 ->format('A4')
                 ->margins(12, 13, 17, 13)
                 ->save($absolutePath);
